@@ -1,4 +1,4 @@
-const { app,screen } = require('electron')
+const { app, screen } = require('electron')
 // const path = require('path')
 
 const AppWindow = require('./src/utils/appWindow')
@@ -10,25 +10,28 @@ app.on('ready', () => {
     require('devtron').install()
 
     const { width, height } = screen.getPrimaryDisplay().workAreaSize
-    
+    console.log(width,height);
+
     const mainWindowConfig = {
-        // width: 540,
-        // height: 40,
-        width:width*0.7,
-        height:height,
-        resizable:false,
-        movable:false,
+        width: 1600,
+        height: 800,
+        // width,
+        // height,
+        // resizable:false,
+        resizable: true,
+        movable: false,
         // frame:false,
-        transparent:true,
-        opacity:0,
-        fullscreen:process.platform === 'win32' || undefined,
+        transparent: true,
+        opacity: 0,
+        fullscreen: process.platform === 'win32' || undefined,
+        // fullscreen: true,
         // alwaysOnTop:true,
-        hasShadow:false
+        hasShadow: false
     }
     const mainPath = "http://localhost:8080"
     // const mainPath = path.join(__dirname,'./dist/index.html')
-    
-    
+
+
     let mainWindow = new AppWindow(mainWindowConfig, mainPath)
     //
     mainWindow.webContents.openDevTools()
@@ -66,11 +69,11 @@ app.on('window-all-closed', function () {
 })
 
 // app.on('activate', function () {
-    // if (BrowserWindow.getAllWindows().length === 0) createWindow()
-    // })
+// if (BrowserWindow.getAllWindows().length === 0) createWindow()
+// })
 
 app.allowRendererProcessReuse = true //去除warning
-    
+
 /*
 ipcMain.emit('event') <=> ipcMain.on('event',callback)
 BrowserWindow.webContents/ipcRenderer.send('event')<=>ipcRenderer.on('event',callback)

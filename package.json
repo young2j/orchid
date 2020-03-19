@@ -13,16 +13,17 @@
   },
   "dependencies": {
     "core-js": "^3.6.4",
-    "vue": "^2.6.11"
+    "roughjs": "^4.0.4"
   },
   "devDependencies": {
+    "@caohenghu/vue-colorpicker": "^1.2.4",
     "@vue/cli-plugin-babel": "~4.2.0",
     "@vue/cli-plugin-eslint": "~4.2.0",
     "@vue/cli-service": "~4.2.0",
     "babel-eslint": "^10.0.3",
     "babel-plugin-component": "^1.1.1",
     "bootstrap": "^4.4.1",
-    "bootstrap-vue": "^2.6.1",
+    "bootstrap-vue": "^2.7.0",
     "concurrently": "^5.1.0",
     "devtron": "^1.4.0",
     "electron": "^8.1.1",
@@ -30,6 +31,9 @@
     "eslint-plugin-vue": "^6.1.2",
     "less": "^3.0.4",
     "less-loader": "^5.0.0",
+    "node-sass": "^4.13.1",
+    "sass-loader": "^8.0.2",
+    "vue": "^2.6.11",
     "vue-template-compiler": "^2.6.11",
     "wait-on": "^4.0.1"
   }

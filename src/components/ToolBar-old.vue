@@ -59,7 +59,7 @@
         <ul @click='changeLineShape'>
           <li>
             <div :style="selectLineStyle"></div>
-            <p class='line-width'>{{config.lineWidth+'px'}}</p>
+            <p class='line-width'>{{linewidth+'px'}}</p>
           </li>
           <li><hr/></li>
           <li data-shape='radius'><div class='radius-line'></div></li>
@@ -72,9 +72,9 @@
           class="range-input"
           type="range"
           min="0"
-          max="40"
+          max="20"
           size='sm'
-          v-model="config.lineWidth"
+          v-model="linewidth"
         ></b-form-input>
        </div>
       </b-button>
@@ -85,7 +85,7 @@
         <ColorPicker id='colorpicker'
           v-show="showColorPicker"
           :style="{top:toolbarBottom>380? 40+'px':-378+'px'}"
-          :color="config.lineColor"
+          :color="color"
           @changeColor="changeColor"
         />
       </b-button>
@@ -119,36 +119,45 @@ import brush from '../assets/brush.svg'
 import feather from '../assets/feather.svg'
 import picker from '../assets/picker.svg'
 
+// import Observer from '../utils/observer'
 import ColorPicker from '@caohenghu/vue-colorpicker'
 
+import html2canvas from 'html2canvas'
 
 export default {
   props:{
-    toolbarBottom: Number,
-    canvasProps:Object
+    toolbarBottom: Number
   },
   components:{
     ColorPicker
   },
   data() {
     return {
+      isDrawLine:false,
+      square:{
+        startX:0,
+        startY:0,
+        width:0,
+        height:0,
+        drawing:false,
+        index:0,
+      },
+      // observer: null,
+      drawRegion:null,
+      captureRegion:null,
+
       showColorPicker:false,
+
+      color:'#d63200', //border-color
+      linewidth: 2, //border-width
+      lineshape:'solid', //boder-style
+      radius:'0px',
       showLineShape:false,
 
       featherCursor:`url(${feather}) 0 30,default`,
       brushCursor: `url(${brush}) 0 30,default`,
       pickerCursor:`url(${picker}) 0 30,default`,
 
-      config:{
-        lineWidth:2,
-        lineColor:"#d63200",
-        lineShape:'solid',
-        shadowBlur:2,
-        radius:'0px',
-      },
-
-      undoStack:[],
-      redoStack:[]
     }
   },
   computed:{
@@ -157,43 +166,27 @@ export default {
         width:'100px',
         height:'0px',
         border: 'none',
-        borderBottom:this.config.lineWidth+'px ' + this.config.lineColor + ' ' + this.config.lineShape + ' ',
-        borderRadius:this.config.radius
-      }
-    },
-    canvasX(){
-      return this.canvasProps.canvasX
-    },
-    canvasY(){
-      return this.canvasProps.canvasY
-    },
-    canvasWidth(){
-      return this.canvasProps.canvasWidth
-    },
-    canvasHeight(){
-      return this.canvasProps.canvasHeight
-    },
-  },
-  mounted(){
-    this.captureRef = document.getElementById('capture-canvas')
-    this.ctx = this.captureRef.getContext('2d')
+        borderBottom:this.linewidth+'px ' + this.color + ' ' + this.lineshape + ' ',
+        borderRadius:this.radius
+        }
+    }
   },
   methods: {
     changeColor(color) {
       const { r, g, b, a } = color.rgba
-      this.config.lineColor = `rgba(${r}, ${g}, ${b}, ${a})`
+      this.color = `rgba(${r}, ${g}, ${b}, ${a})`
     },
     changeLineShape(e){
       let shape = e.target.dataset.shape || 'solid'
       if(shape==='radius'){
-        this.config.radius = this.config.lineWidth/2 + 'px'
-        this.config.lineShape = 'solid'
+        this.radius = this.linewidth/2 + 'px'
+        this.lineshape = 'solid'
       }else if(shape==='radius50'){
-        this.config.radius = '50%'
-        this.config.lineShape = 'solid'
+        this.radius = '50%'
+        this.lineshape = 'solid'
       }else{
-        this.config.radius = 0
-        this.config.lineShape = shape
+        this.radius = 0
+        this.lineshape = shape
       }
     },
     colseDropDown(){
@@ -201,159 +194,72 @@ export default {
     },
     clickUndo(){
       this.colseDropDown()
-      if(this.undoStack.length){
-        let preData = this.undoStack.pop()
-        this.redoStack.push(preData)
-        this.ctx.putImageData(preData,0,0)
-      }else{
-        return
-      }
+      // this.observer.undo()
     },
     clickRedo(){
       this.colseDropDown()
-      if(this.redoStack.length){
-        let nextData = this.redoStack.pop()
-        this.undoStack.push(nextData)
-        this.ctx.putImageData(nextData,0,0)
-      }else{
-        return
-      }
-    },
-    setStyle(){
-      this.ctx.lineWidth = this.config.lineWidth
-      this.ctx.strokeStyle = this.config.lineColor
-      this.ctx.shadowColor = this.config.lineColor
-      this.ctx.shadowBlur = this.config.shadowBlur
+      // this.observer.redo()
     },
     clickSquare(){
       this.colseDropDown()
-      this.captureRef.style.cursor = "crosshair"
+      this.captureRegion.style.cursor = "crosshair"
+      this.captureRegion.onmousedown = e => {
+        this.square.drawing = true;
+        this.square.startX = e.clientX;
+        this.square.startY = e.clientY;
+        const square = document.createElement('div')
+        square.className = 'orchid square'
+        square.id = `square-${this.square.index}`
+        square.style.position = 'absolute'
+        square.style.border = this.selectLineStyle.borderBottom
+        square.style.borderRadius = this.selectLineStyle.borderRadius
+        square.style.zIndex = 99
+        this.drawRegion.appendChild(square)
 
-      this.captureRef.onmousedown = e => {
-        let x1 = e.clientX,
-            y1 = e.clientY,
-            left = this.canvasX,
-            top = this.canvasY,
-            X = x1-left,
-            Y = y1-top
-        //设置样式
-        this.setStyle()
-        //开始绘制
-        // this.ctx.beginPath()
-        this.ctx.moveTo(X,Y)
-        //记录当前画布状态,以备进行撤销操作
-        let preData = this.ctx.getImageData(0,0,this.canvasWidth,this.canvasHeight)
-        this.undoStack.push(preData)
         document.onmousemove = e => {
-          let x2 = e.clientX,
-              y2 = e.clientY
-          this.ctx.save()
-          this.ctx.strokeRect(X,Y,x2-x1,y2-y1)
-          this.ctx.stroke()
-          this.ctx.restore()
+          // this.observer.disconnect() //不要记录移动过程中的样式变化
+          if (this.square.drawing) {
+            const width = e.clientX - this.square.startX; //可能反向选区,就为负数
+            const height = e.clientY - this.square.startY;
+            this.square.width = width
+            this.square.height = height
+            square.style.width = this.square.width + "px";
+            square.style.height = this.isDrawLine? '0px': this.square.height + "px";
+            square.style.left = this.square.startX + "px";
+            square.style.top = this.square.startY + "px";
+          }
         }
-      }
-      document.onmouseup = () => {
-        //记录绘制完成后的状态
-        let preData = this.ctx.getImageData(0,0,this.canvasWidth,this.canvasHeight)
-        this.undoStack.push(preData)
-
-        //------
-        document.onmousemove = null
+        document.onmouseup = () => {
+          document.onmousemove = null
+          this.square.drawing = false
+          this.square.index += 1
+          this.isDrawLine = false
+          // this.observer.observe() //继续记录DOM变更
+        }
       }
     },
     clickCircle(){
       this.colseDropDown()
-      this.captureRef.style.cursor = "crosshair"
+      this.captureRegion.style.cursor = "crosshair"
       this.radius = '50%'
     },
     clickArrow(){
       this.colseDropDown()
-      this.captureRef.style.cursor = this.featherCursor
+      this.captureRegion.style.cursor = this.featherCursor
     },
     clickLine(){
       this.colseDropDown()
-      this.captureRef.style.cursor = this.featherCursor
-
-      this.captureRef.onmousedown = e =>{
-        let x1 = e.clientX,
-            y1 = e.clientY,
-            left = this.canvasX,
-            top = this.canvasY,
-            X = x1-left,
-            Y = y1-top
-        //设置样式
-        this.setStyle()
-        //开始绘制
-        // this.ctx.beginPath()
-        this.ctx.moveTo(X,Y)
-        //记录当前画布状态,以备进行撤销操作
-        let preData = this.ctx.getImageData(0,0,this.canvasWidth,this.canvasHeight)
-        this.undoStack.push(preData)
-
-        //绘制过程
-        document.onmousemove = e => {
-          let x2 = e.clientX,
-              y2 = e.clientY,
-              X2 = x2 - left,
-              Y2 = y2 - top
-          this.ctx.lineTo(X2,Y2)
-          this.ctx.stroke()
-        }
-      }
-      document.onmouseup = () => {
-        //记录绘制完成后的状态
-        let preData = this.ctx.getImageData(0,0,this.canvasWidth,this.canvasHeight)
-        this.undoStack.push(preData)
-
-        //------
-        document.onmousemove = null
-      }
+      this.captureRegion.style.cursor = this.featherCursor
+      this.isDrawLine = true
     },
     clickText(){
       this.colseDropDown()
-      this.captureRef.style.cursor = "text"
+      this.captureRegion.style.cursor = "text"
     },
     clickBrush(){
       this.colseDropDown()
-      this.captureRef.style.cursor = this.brushCursor
-
-      this.captureRef.onmousedown = e =>{
-        let x1 = e.clientX,
-            y1 = e.clientY,
-            left = this.canvasX,
-            top = this.canvasY,
-            X = x1-left,
-            Y = y1-top
-        //设置样式
-        this.setStyle()
-        //开始绘制
-        // this.ctx.beginPath()
-        this.ctx.moveTo(X,Y)
-        //记录当前画布状态,以备进行撤销操作
-        let preData = this.ctx.getImageData(0,0,this.canvasWidth,this.canvasHeight)
-        this.undoStack.push(preData)
-
-        //绘制过程
-        document.onmousemove = e => {
-          let x2 = e.clientX,
-              y2 = e.clientY,
-              X2 = x2 - left,
-              Y2 = y2 - top
-          this.ctx.lineTo(X2,Y2)
-          this.ctx.stroke()
-        }
-      }
-      document.onmouseup = () => {
-        //记录绘制完成后的状态
-        let preData = this.ctx.getImageData(0,0,this.canvasWidth,this.canvasHeight)
-        this.undoStack.push(preData)
-
-        //------
-        document.onmousemove = null
-      }
+      this.captureRegion.style.cursor = this.brushCursor
     },
-
     clickLineShape(){
       this.showColorPicker = false
       this.showLineShape = !this.showLineShape
@@ -370,22 +276,30 @@ export default {
     clickNo() {
       this.colseDropDown()
       this.$emit('initSelect')
-      this.captureRef.style.cursor = 'move'
-
-      this.undoStack = []
-      this.redoStack = []
-      this.ctx.clearRect(0,0,this.canvasWidth,this.canvasHeight)
+      this.captureRegion.style.cursor = 'move'
+      this.drawRegion.innerHTML = ''
     },
     clickYes(){
       this.colseDropDown()
-      let url = this.captureRef.toDataURL('image/png')
-      let img = new Image()
-      img.src = url
-      img.style.cssText = 'position:absolute;left:0px;top:0px'
-      document.body.appendChild(img)
-      //....
-    }
+      html2canvas(this.drawRegion).then(
+        canvas=>{
+          document.body.appendChild(canvas)
+        }
+      )
+    },
   },
+  mounted(){
+    this.captureRegion = document.getElementById('captureRegion')
+    this.drawRegion = document.getElementById('drawRegion')
+
+    //监视绘画区变更记录
+    // const observer = new Observer(this.drawRegion)
+    // observer.observe()
+    // this.observer = observer
+  },
+  // beforeDestroy(){
+  //   this.observer.takeRecords()
+  // }
 }
 </script>
 

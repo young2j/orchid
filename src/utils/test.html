@@ -10,9 +10,11 @@
     body {
       background-color: black;
     }
+   
 </style>
 
 <body>
+  <div id='line'></div>
     <div id="container">
         <div id="btnDiv">
           <button id="btn1">截图</button>
@@ -21,8 +23,7 @@
         </div>
         <div id="imgDiv"></div>
         <div id="clipImgDiv"></div>
-</div>
-
+    </div>
     <script>
   let originWidth; // 图片原始宽度
   let originHeight; // 图片原始高度
@@ -48,7 +49,7 @@
     flag: false,
     kind: "drag"
   };
-  
+
 // CSS样式修改
   container.style.display = 'flex';
   container.style.flexDirection = 'column';

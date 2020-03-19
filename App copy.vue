@@ -1,24 +1,17 @@
 <template>
   <div id="app">
-    <div id="mask"
-      @mousedown="onSelectRegion"
-      :style="{cursor: completeSelectRegion? 'default':'crosshair'}">
+    <div id="mask" @mousedown="onSelectRegion" :style="{cursor: completeSelectRegion? 'default':'crosshair'}"></div>
+    <div id="captureRegion" :style="captureRegionStyle" v-show="isCapture" >
+      <div class="drag-circle" data-direction="nw" v-show="canDrag">🌸</div>
+      <div class="drag-circle" data-direction="sw" v-show="canDrag">🌸</div>
+      <div class="drag-circle" data-direction="ne" v-show="canDrag">🌸</div>
+      <div class="drag-circle" data-direction="se" v-show="canDrag">🌸</div>
+      <div class="drag-circle" data-direction="n" v-show="canDrag">🌸</div>
+      <div class="drag-circle" data-direction="s" v-show="canDrag">🌸</div>
+      <div class="drag-circle" data-direction="e" v-show="canDrag">🌸</div>
+      <div class="drag-circle" data-direction="w" v-show="canDrag">🌸</div>
     </div>
-
-    <div id="captureRegion"
-      :style="captureRegionStyle"
-      v-show="isCapture">
-    </div>
-
-    <canvas id='capture-canvas'
-      ref='capture'
-      v-show="completeSelectRegion"
-      :width="canvasWidth"
-      :height="canvasHeight"
-      :style="{position:'absolute',left:canvasX+'px',top:canvasY+'px',cursor:'move'}"
-      @mousedown="onDrag">
-    </canvas>
-
+    <canvas id='capture-canvas' ref='capture' :width="width" :height="height" :style="[captureRegionStyle,{left:canvasX,top:canvasY,width:canvasWidth,height:canvasHeight}]" @mousedown="onDrag"></canvas>
     <ToolBar
       @initSelect="initSelect"
       @closeDrag="canDrag=false"
@@ -27,12 +20,10 @@
       :toolbarBottom="toolbarBottom"
       :canvasProps="{canvasX,canvasY,canvasWidth,canvasHeight}"
     />
-
     <video id="video"></video>
     <canvas id="desktop-canvas" ref='desktop'></canvas>
   </div>
 </template>
-
 
 <script>
 import ToolBar from "./components/ToolBar";
@@ -57,15 +48,14 @@ export default {
       captureRegionStyle: {
         position: "absolute",
         // zIndex: 999,
-        cursor:'move',
-        background:'rgba(0,0,0,0)',
+        cursor: 'move',
         draggable: false,
         borderWidth:'2px',
         borderColor:'rgba(255,100,0,0.7)',
         borderStyle:'solid',
         boxShadow: "0px 0px 2px 2px rgba(85, 80, 80, 0.3)",
-        left: "0px", // =this.x
-        top: "0px", // = this.y
+        left: 0, // =this.x
+        top: 0, // = this.y
         width: "0px", //this.width
         height: "0px" //this.height
       },
@@ -79,18 +69,16 @@ export default {
       return  this.$root.$data.screenHeight - (this.y+this.height+60+40)
     },
     canvasX(){
-      return this.x+parseInt(this.captureRegionStyle.borderWidth)
+      return this.x+parseFloat(this.captureRegionStyle.borderWidth)
     },
     canvasY(){
-      return this.y+parseInt(this.captureRegionStyle.borderWidth)
+      return this.y+parseFloat(this.captureRegionStyle.borderWidth)
     },
     canvasWidth(){
-      let width = this.width - 2*parseInt(this.captureRegionStyle.borderWidth)
-      return width>0? width:0
+      return this.width - 2*parseFloat(this.captureRegionStyle.borderWidth)
     },
     canvasHeight(){
-      let height = this.height - 2*parseInt(this.captureRegionStyle.borderWidth)
-      return height>0? height:0
+      return this.height - 2*parseFloat(this.captureRegionStyle.borderWidth)
     }
   },
   methods: {
@@ -103,8 +91,7 @@ export default {
         desktop,
         this.canvasX,this.canvasY,this.canvasWidth,this.canvasHeight,
         0,0,this.canvasWidth,this.canvasHeight
-      )
-      ctx.globalCompositeOperation = "source-over"
+        )
     },
     initSelect() {
       //每次选择区域前初始化选区状态,也就是"取消"工具按钮作用
@@ -155,8 +142,11 @@ export default {
       if (this.completeSelectRegion && this.canDrag) {
         // 鼠标点击物体那一刻相对于物体左侧边框的距离=点击时的位置相对于浏览器
         // 最左边的距离-物体左边框相对于浏览器最左边的距离，纵向同理
+        const mouseDownX = e.clientX;
+        const mouseDownY = e.clientY;
         const leftWidth = e.clientX - this.x;
         const topHeight = e.clientY - this.y;
+        const direction = e.target.dataset.direction;
 
         document.onmousemove = e => {
           this.completeSelectRegion = false; //移动时意味着重新选区，未完成选区隐藏工具条
@@ -177,12 +167,76 @@ export default {
             posY = document.body.clientHeight - this.height;
           }
 
-          //拖动
-          this.x = posX;
-          this.y = posY;
-          this.captureRegionStyle.left = this.x + "px";
-          this.captureRegionStyle.top = this.y + "px";
-        }
+          //判断移动方向，更新宽高，位置
+          const disX = e.clientX - mouseDownX;
+          const disY = e.clientY - mouseDownY;
+
+          if (direction === "n") {
+            //上拉伸，高度增加或减少
+            this.height = this.height - disY;
+            this.y = this.y + disY;
+
+            this.captureRegionStyle.height = this.height + "px";
+            this.captureRegionStyle.top = this.y + "px";
+          } else if (direction === "w") {
+            //左拉伸
+            this.width = this.width - disX;
+            this.x = this.x + disX;
+            this.captureRegionStyle.width = this.width + "px";
+            this.captureRegionStyle.left = this.x + "px";
+          } else if (direction === "e") {
+            //右拉伸
+            this.width = this.width + disX;
+            this.captureRegionStyle.width = this.width + "px";
+          } else if (direction === "s") {
+            //下拉伸
+            this.height = this.height + disY;
+            this.captureRegionStyle.height = this.height + "px";
+          } else if (direction === "nw") {
+            //左上拉伸
+            this.width = this.width - disX;
+            this.height = this.height - disY;
+            this.x = this.x + disX;
+            this.y = this.y + disY;
+
+            this.captureRegionStyle.width = this.width + "px";
+            this.captureRegionStyle.height = this.height + "px";
+            this.captureRegionStyle.left = this.x + "px";
+            this.captureRegionStyle.top = this.y + "px";
+          } else if (direction === "ne") {
+            //右上拉伸
+            this.width = this.width + disX;
+            this.height = this.height - disY;
+            this.y = this.y + disY;
+
+            this.captureRegionStyle.height = this.height + "px";
+            this.captureRegionStyle.width = this.width + "px";
+            this.captureRegionStyle.top = this.y + "px";
+          } else if (direction === "sw") {
+            //左下拉伸
+
+            this.width = this.width - disX;
+            this.height = this.height + disY;
+            this.x = this.x + disX;
+
+            this.captureRegionStyle.width = this.width + "px";
+            this.captureRegionStyle.height = this.height + "px";
+            this.captureRegionStyle.left = this.x + "px";
+          } else if (direction === "se") {
+            //右下拉伸
+            this.width = this.width + disX;
+            this.height = this.height + disY;
+
+            this.captureRegionStyle.width = this.width + "px";
+            this.captureRegionStyle.height = this.height + "px";
+          } else {
+            //拖动
+            this.x = posX;
+            this.y = posY;
+            this.captureRegionStyle.left = this.x + "px";
+            this.captureRegionStyle.top = this.y + "px";
+          }
+        };
 
         document.onmouseup = () => {
           // 鼠标抬起时不再移动
@@ -245,6 +299,68 @@ body {
   width: 100%;
   height: 100%;
   z-index: 99;
+}
+
+#captureRegion{
+  .drag-circle {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    font-size: 10px;
+    overflow: hidden;
+    z-index: 999;
+    &:nth-child(1) {
+      left: -8px;
+      top: -9px;
+      cursor: nwse-resize;
+    }
+    &:nth-child(2) {
+      left: -8px;
+      bottom: -8px;
+      cursor: nesw-resize;
+    }
+    &:nth-child(3) {
+      right: -9px;
+      top: -9px;
+      cursor: nesw-resize;
+    }
+    &:nth-child(4) {
+      right: -10px;
+      bottom: -8px;
+      cursor: nwse-resize;
+    }
+    &:nth-child(5) {
+      top: -10px;
+      left: 50%;
+      cursor: ns-resize;
+    }
+    &:nth-child(6) {
+      bottom: -8px;
+      left: 50%;
+      cursor: ns-resize;
+    }
+    &:nth-child(7) {
+      right: -10px;
+      top: 50%;
+      cursor: ew-resize;
+    }
+    &:nth-child(8) {
+      left: -9px;
+      top: 50%;
+      cursor: ew-resize;
+    }
+  }
+  #capture-canvas{
+    position: absolute;
+    left:0px;
+    top: 0px;
+  }
+}
+#capture-canvas{
+  position: absolute;
+  left:0px;
+  top: 0px;
+  z-index: 9999;
 }
 
 #desktop-canvas,

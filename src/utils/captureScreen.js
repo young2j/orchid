@@ -51,22 +51,22 @@ const handleStream = (stream) => {
   video.srcObject = stream
   video.onloadedmetadata = () => {
     video.play()
-    // const ctx = document.getElementById('canvas').getContext('2d')
-    const canvas = document.getElementById('canvas')
+    
+    const canvas = document.getElementById('desktop-canvas')
     canvas.width = size.width
     canvas.height = size.height
     const ctx = canvas.getContext('2d')
-    // ctx.drawImage(video,0,0) 
+    // ctx.drawImage(video,0,0)
     createImageBitmap(video).then(bmp => { //转为bitmap，可以提高性能，降低canvas渲染延迟
         ctx.drawImage(bmp, 0, 0) //startX,startY,width,height  in canvas
         stream.getTracks()[0].stop() //关闭视频流，序号是反向的，此处只有一个所以是0
-    
+
         //移除video元素
         document.getElementById('app').removeChild(video)
       }
     )
     // stream.getTracks()[0].stop() //关闭视频流，序号是反向的，此处只有一个所以是0
-    
+
     //移除video元素
     // document.getElementById('app').removeChild(video)
   }

@@ -9,9 +9,18 @@
       :style="captureRegionStyle"
       v-show="isCapture">
     </div>
+<!-- 两个canvas，一个主显示，一个主辅助 -->
+    <canvas id='display-canvas'
+      ref='display'
+      v-show="completeSelectRegion"
+      :width="canvasWidth"
+      :height="canvasHeight"
+      :style="{position:'absolute',left:canvasX+'px',top:canvasY+'px'}"
+      >
+    </canvas>
 
-    <canvas id='capture-canvas'
-      ref='capture'
+    <canvas id='assist-canvas'
+      ref='assist'
       v-show="completeSelectRegion"
       :width="canvasWidth"
       :height="canvasHeight"
@@ -19,6 +28,7 @@
       @mousedown="onDrag">
     </canvas>
 
+<!-- 工具条 -->
     <ToolBar
       @initSelect="initSelect"
       @closeDrag="canDrag=false"
@@ -26,8 +36,11 @@
       v-show="completeSelectRegion"
       :toolbarBottom="toolbarBottom"
       :canvasProps="{canvasX,canvasY,canvasWidth,canvasHeight}"
+      :clipDesktop="clipDesktop"
     />
-
+<!-- 颜色、位置提示框 -->
+    <ColorTip v-show="!isCapture"/>
+<!-- 桌面捕获 -->
     <video id="video"></video>
     <canvas id="desktop-canvas" ref='desktop'></canvas>
   </div>
@@ -36,12 +49,14 @@
 
 <script>
 import ToolBar from "./components/ToolBar";
+import ColorTip from './components/ColorTip'
 import { captureScreen } from "./utils/captureScreen";
 
 export default {
   name: "App",
   components: {
     ToolBar,
+    ColorTip
   },
   data() {
     return {
@@ -96,7 +111,7 @@ export default {
   methods: {
     clipDesktop(){
       let desktop = this.$refs.desktop,
-      ctx = this.$refs.capture.getContext('2d')
+      ctx = this.$refs.display.getContext('2d')
       ctx.clearRect(0,0,this.canvasWidth,this.canvasHeight)
 
       ctx.drawImage(
@@ -110,7 +125,7 @@ export default {
       //每次选择区域前初始化选区状态,也就是"取消"工具按钮作用
       this.completeSelectRegion = false;
       this.isCapture = false;
-      this.canDrag = false;
+      this.canDrag = true;
       this.captureRegionStyle.left = 0;
       this.captureRegionStyle.top = 0;
       this.captureRegionStyle.width = 0;
@@ -121,6 +136,11 @@ export default {
       if (this.completeSelectRegion) {
         return false;
       } //选区成功后，不可再点击，除非点击"取消"重新选
+
+      // if(this.showPixelCanvas){
+      //   return false
+      // } //像素查看时，不可进行截图选取
+
       this.initSelect();
       this.x = e.clientX;
       this.y = e.clientY;

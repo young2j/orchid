@@ -56,17 +56,16 @@
           v-show="showLineShape"
           :style="{top:toolbarBottom>160? 40+'px':-143+'px'}"
         >
-        <ul @click='changeLineShape'>
+        <ul>
           <li>
             <div :style="selectLineStyle"></div>
             <p class='line-width'>{{config.lineWidth+'px'}}</p>
           </li>
           <li><hr/></li>
-          <li data-shape='radius'><div class='radius-line'></div></li>
-          <li data-shape='radius50'><div class='radius50-line'></div></li>
-          <li data-shape='solid'><div class='solid-line'></div></li>
-          <li data-shape='dotted'><div class='dot-line'></div></li>
-          <li data-shape='dashed'><div class='dash-line'></div></li>
+          <li @click='changeLineShape' data-shape='radius'><div class='radius-line'></div></li>
+          <li @click='changeLineShape' data-shape='radius50'><div class='radius50-line'></div></li>
+          <li @click='changeLineShape' data-shape='solid'><div class='solid-line'></div></li>
+          <li @click='changeLineShape' data-shape='dashed'><div class='dash-line'></div></li>
        </ul>
         <b-form-input
           class="range-input"
@@ -117,15 +116,16 @@
 <script>
 import brush from '../assets/brush.svg'
 import feather from '../assets/feather.svg'
-import picker from '../assets/picker.svg'
+// import picker from '../assets/picker.svg'
 
 import ColorPicker from '@caohenghu/vue-colorpicker'
-
+import arrowCoordinate from '../utils/arrowCoordinate'
 
 export default {
   props:{
     toolbarBottom: Number,
-    canvasProps:Object
+    canvasProps:Object,
+    clipDesktop:Function
   },
   components:{
     ColorPicker
@@ -134,21 +134,26 @@ export default {
     return {
       showColorPicker:false,
       showLineShape:false,
+      inputText:false,
+      fontSize:16,
 
       featherCursor:`url(${feather}) 0 30,default`,
       brushCursor: `url(${brush}) 0 30,default`,
-      pickerCursor:`url(${picker}) 0 30,default`,
+      // pickerCursor:`url(${picker}) 0 30,default`,
 
       config:{
         lineWidth:2,
-        lineColor:"#d63200",
-        lineShape:'solid',
+        lineColor:"#6EFF2A",
+        lineCap:'round',
+        lineDash:[0,0],
         shadowBlur:2,
-        radius:'0px',
+        lineRadius50:false,
+        //选项显示用
+        lineShape:'solid',
+        radius:'0px'
       },
 
-      undoStack:[],
-      redoStack:[]
+      recordsQueue:[0],
     }
   },
   computed:{
@@ -157,7 +162,7 @@ export default {
         width:'100px',
         height:'0px',
         border: 'none',
-        borderBottom:this.config.lineWidth+'px ' + this.config.lineColor + ' ' + this.config.lineShape + ' ',
+        borderBottom:this.config.lineWidth+'px ' + this.config.lineColor + ' ' + this.config.lineShape,
         borderRadius:this.config.radius
       }
     },
@@ -175,8 +180,11 @@ export default {
     },
   },
   mounted(){
-    this.captureRef = document.getElementById('capture-canvas')
-    this.ctx = this.captureRef.getContext('2d')
+    this.displayRef = document.getElementById('display-canvas')
+    this.displayCtx = this.displayRef.getContext('2d')
+
+    this.assistRef = document.getElementById('assist-canvas')
+    this.assistCtx = this.assistRef.getContext('2d')
   },
   methods: {
     changeColor(color) {
@@ -184,16 +192,34 @@ export default {
       this.config.lineColor = `rgba(${r}, ${g}, ${b}, ${a})`
     },
     changeLineShape(e){
-      let shape = e.target.dataset.shape || 'solid'
-      if(shape==='radius'){
-        this.config.radius = this.config.lineWidth/2 + 'px'
-        this.config.lineShape = 'solid'
-      }else if(shape==='radius50'){
-        this.config.radius = '50%'
-        this.config.lineShape = 'solid'
-      }else{
-        this.config.radius = 0
-        this.config.lineShape = shape
+      this.config.lineRadius50 = false
+      let shape = e.target.dataset.shape
+
+      switch(shape){
+        case 'solid':
+          this.config.lineCap='butt'
+          this.config.lineShape = 'solid'
+          this.config.radius = '0px'
+          this.config.lineDash = [0,0]
+          break
+        case 'radius':
+          this.config.lineCap = 'round'
+          this.config.lineShape = 'solid'
+          this.config.radius = this.config.lineWidth/2+'px'
+          this.config.lineDash = [0,0]
+          break
+        case 'radius50':
+          this.config.lineRadius50 = true
+          this.config.lineShape = 'solid'
+          this.config.radius = '50%'
+          this.config.lineDash = [0,0]
+          this.clickLine()
+          break
+        case 'dashed':
+          this.config.lineDash = [12,10]
+          this.config.lineShape = 'dashed'
+          this.config.radius = '0px'
+          break
       }
     },
     colseDropDown(){
@@ -201,81 +227,147 @@ export default {
     },
     clickUndo(){
       this.colseDropDown()
-      if(this.undoStack.length){
-        let preData = this.undoStack.pop()
-        this.redoStack.push(preData)
-        this.ctx.putImageData(preData,0,0)
+      let currentData = this.recordsQueue.pop()
+      if(currentData){
+        this.recordsQueue.unshift(currentData)
+        let preData = this.recordsQueue[this.recordsQueue.length-1]
+        if(preData){ //!=0
+          this.displayCtx.putImageData(preData,0,0) //恢复前一次状态
+        } else { //===0
+          this.clipDesktop()
+        }
       }else{
-        return
+        this.recordsQueue.push(currentData) //0
       }
     },
     clickRedo(){
       this.colseDropDown()
-      if(this.redoStack.length){
-        let nextData = this.redoStack.pop()
-        this.undoStack.push(nextData)
-        this.ctx.putImageData(nextData,0,0)
+
+      let nextData = this.recordsQueue.shift()
+      if(nextData){
+        this.displayCtx.putImageData(nextData,0,0)
+        this.recordsQueue.push(nextData)
       }else{
-        return
+        this.recordsQueue.unshift(nextData) //0
       }
     },
+    recordAndClearEvents(){
+      let currentData = this.displayCtx.getImageData(0,0,this.canvasWidth,this.canvasHeight)
+      this.recordsQueue.push(currentData)
+
+      document.onmousemove = null
+      document.onmouseup = null
+    },
     setStyle(){
-      this.ctx.lineWidth = this.config.lineWidth
-      this.ctx.strokeStyle = this.config.lineColor
-      this.ctx.shadowColor = this.config.lineColor
-      this.ctx.shadowBlur = this.config.shadowBlur
+      this.displayCtx.lineWidth = this.config.lineWidth
+      this.displayCtx.strokeStyle = this.config.lineColor
+      this.displayCtx.shadowColor = this.config.lineColor
+      this.displayCtx.shadowBlur = this.config.shadowBlur
+      this.displayCtx.lineCap = this.config.lineCap
+      this.displayCtx.setLineDash(this.config.lineDash)
+
+      this.assistCtx.lineWidth = this.config.lineWidth
+      this.assistCtx.strokeStyle = this.config.lineColor
+      this.assistCtx.shadowColor = this.config.lineColor
+      this.assistCtx.shadowBlur = this.config.shadowBlur
+      this.assistCtx.lineCap = this.config.lineCap
+      this.assistCtx.setLineDash(this.config.lineDash)
     },
     clickSquare(){
       this.colseDropDown()
-      this.captureRef.style.cursor = "crosshair"
+      this.assistRef.style.cursor = "crosshair"
 
-      this.captureRef.onmousedown = e => {
+      this.assistRef.onmousedown = e => {
         let x1 = e.clientX,
             y1 = e.clientY,
             left = this.canvasX,
             top = this.canvasY,
-            X = x1-left,
-            Y = y1-top
+            X = x1-left, //相对于画布，起点X
+            Y = y1-top //相对于画布，起点Y
         //设置样式
         this.setStyle()
         //开始绘制
-        // this.ctx.beginPath()
-        this.ctx.moveTo(X,Y)
-        //记录当前画布状态,以备进行撤销操作
-        let preData = this.ctx.getImageData(0,0,this.canvasWidth,this.canvasHeight)
-        this.undoStack.push(preData)
+        // this.assistCtx.beginPath()
+        this.assistCtx.moveTo(X,Y)
+
+        //bind mousemove
+        let x2,y2
         document.onmousemove = e => {
-          let x2 = e.clientX,
-              y2 = e.clientY
-          this.ctx.save()
-          this.ctx.strokeRect(X,Y,x2-x1,y2-y1)
-          this.ctx.stroke()
-          this.ctx.restore()
+          x2 = e.clientX
+          y2 = e.clientY
+
+          this.assistCtx.clearRect(0,0,this.canvasWidth,this.canvasHeight)
+          this.assistCtx.beginPath()
+          this.assistCtx.rect(X,Y,x2-x1,y2-y1)
+          this.assistCtx.stroke()
+        }
+
+        document.onmouseup = () => {
+          //清空辅助画布并绘制到显示画布
+          this.assistCtx.clearRect(0,0,this.canvasWidth,this.canvasHeight)
+          this.displayCtx.strokeRect(X,Y,x2-x1,y2-y1)
+          //记录当前的状态并清理事件
+          this.recordAndClearEvents()
+          //------
         }
       }
-      document.onmouseup = () => {
-        //记录绘制完成后的状态
-        let preData = this.ctx.getImageData(0,0,this.canvasWidth,this.canvasHeight)
-        this.undoStack.push(preData)
-
-        //------
-        document.onmousemove = null
-      }
     },
-    clickCircle(){
+    clickCircle(){ //椭圆也可以用贝赛尔曲线绘制
       this.colseDropDown()
-      this.captureRef.style.cursor = "crosshair"
-      this.radius = '50%'
+      this.assistRef.style.cursor = this.config.lineRadius50 ? this.featherCursor:'crosshair'
+
+      this.assistRef.onmousedown = e => {
+        let x1 = e.clientX,
+            y1 = e.clientY,
+            left = this.canvasX,
+            top = this.canvasY,
+            X = x1-left, //相对于画布，起点X
+            Y = y1-top //相对于画布，起点Y
+        //设置样式
+        this.setStyle()
+        //开始绘制
+        // this.assistCtx.beginPath()
+        this.assistCtx.moveTo(X,Y)
+
+        //bind mousemove
+        let w,h
+        document.onmousemove = e => {
+          w = e.clientX - x1
+          h = e.clientY - y1
+
+          this.assistCtx.clearRect(0,0,this.canvasWidth,this.canvasHeight)
+          this.assistCtx.beginPath()
+          if(this.config.lineRadius50){//模拟radius50%直线
+            this.assistCtx.ellipse(X+w/2,Y+h/2,Math.abs(w/2),this.config.lineWidth/2,0, 0, 2 * Math.PI)
+          }else{
+            this.assistCtx.ellipse(X+w/2,Y+h/2,Math.abs(w/2),Math.abs(h/2),0, 0, 2 * Math.PI) //centerx,centery,long radius,short radius,start angle,end angle
+          }
+          this.assistCtx.stroke()
+        }
+
+        document.onmouseup = () => {
+          //清空辅助画布，绘制到显示画布
+          this.assistCtx.clearRect(0,0,this.canvasWidth,this.canvasHeight)
+
+          this.displayCtx.beginPath()
+          if(this.config.lineRadius50){ //模拟radius50%直线
+            this.displayCtx.ellipse(X+w/2,Y+h/2,Math.abs(w/2),this.config.lineWidth/2,0, 0, 2 * Math.PI)
+          }else{
+            this.displayCtx.ellipse(X+w/2,Y+h/2,Math.abs(w/2),Math.abs(h/2),0, 0, 2 * Math.PI)
+          }
+          this.displayCtx.stroke()
+
+          //记录当前的状态并清理事件
+          this.recordAndClearEvents()
+          //------
+        }
+      }
     },
     clickArrow(){
       this.colseDropDown()
-      this.captureRef.style.cursor = this.featherCursor
-    },
-    clickLine(){
-      this.colseDropDown()
-      this.captureRef.style.cursor = this.featherCursor
+      this.assistRef.style.cursor = this.featherCursor
 
-      this.captureRef.onmousedown = e =>{
+      this.assistRef.onmousedown = e =>{
         let x1 = e.clientX,
             y1 = e.clientY,
             left = this.canvasX,
@@ -284,41 +376,128 @@ export default {
             Y = y1-top
         //设置样式
         this.setStyle()
-        //开始绘制
-        // this.ctx.beginPath()
-        this.ctx.moveTo(X,Y)
-        //记录当前画布状态,以备进行撤销操作
-        let preData = this.ctx.getImageData(0,0,this.canvasWidth,this.canvasHeight)
-        this.undoStack.push(preData)
 
         //绘制过程
+        let X2,Y2,a1,b1,a2,b2,a3,b3
         document.onmousemove = e => {
-          let x2 = e.clientX,
-              y2 = e.clientY,
-              X2 = x2 - left,
-              Y2 = y2 - top
-          this.ctx.lineTo(X2,Y2)
-          this.ctx.stroke()
+          X2 = e.clientX - left;
+          Y2 = e.clientY - top;
+
+          //获得箭头的坐标点
+          [a1,b1,a2,b2,a3,b3] = arrowCoordinate(X,Y,X2,Y2)
+          this.assistCtx.clearRect(0,0,this.canvasWidth,this.canvasHeight) //这行不要可以绘制散射线
+          this.assistCtx.beginPath()
+          this.assistCtx.moveTo(X,Y)
+          this.assistCtx.lineTo(X2,Y2)
+          this.assistCtx.moveTo(a2,b2)
+          this.assistCtx.lineTo(a1,b1)
+          this.assistCtx.lineTo(X2,Y2)
+          this.assistCtx.lineTo(a3,b3)
+          this.assistCtx.lineTo(a2,b2)
+          this.assistCtx.stroke()
+        }
+        document.onmouseup = () => {
+          //清空辅助画布并绘制到显示画布
+          this.assistCtx.clearRect(0,0,this.canvasWidth,this.canvasHeight)
+          this.displayCtx.beginPath()
+          this.displayCtx.moveTo(X,Y)
+          this.displayCtx.lineTo(X2,Y2)
+          this.displayCtx.moveTo(a2,b2)
+          this.displayCtx.lineTo(a1,b1)
+          this.displayCtx.lineTo(X2,Y2)
+          this.displayCtx.lineTo(a3,b3)
+          this.displayCtx.lineTo(a2,b2)
+          this.displayCtx.stroke()
+
+          //记录当前的状态并清理事件
+          this.recordAndClearEvents()
+          //------
         }
       }
-      document.onmouseup = () => {
-        //记录绘制完成后的状态
-        let preData = this.ctx.getImageData(0,0,this.canvasWidth,this.canvasHeight)
-        this.undoStack.push(preData)
+    },
+    clickLine(){
+      this.colseDropDown()
+      this.assistRef.style.cursor = this.featherCursor
+      if(this.config.lineRadius50){
+        this.clickCircle()
+        return
+      }
+      this.assistRef.onmousedown = e =>{
+        let x1 = e.clientX,
+            y1 = e.clientY,
+            left = this.canvasX,
+            top = this.canvasY,
+            X = x1-left,
+            Y = y1-top
+        //设置样式
+        this.setStyle()
 
-        //------
-        document.onmousemove = null
+        //绘制过程
+        let X2,Y2
+        document.onmousemove = e => {
+          X2 = e.clientX - left
+          Y2 = e.clientY - top
+
+          this.assistCtx.clearRect(0,0,this.canvasWidth,this.canvasHeight) //这行不要可以绘制散射线
+          this.assistCtx.beginPath()
+          this.assistCtx.moveTo(X,Y)
+          this.assistCtx.lineTo(X2,Y2)
+          this.assistCtx.stroke()
+        }
+        document.onmouseup = () => {
+          //清空辅助画布并绘制到显示画布
+          this.assistCtx.clearRect(0,0,this.canvasWidth,this.canvasHeight)
+          this.displayCtx.beginPath()
+          this.displayCtx.moveTo(X,Y)
+          this.displayCtx.lineTo(X2,Y2)
+          this.displayCtx.stroke()
+
+          //记录当前的状态并清理事件
+          this.recordAndClearEvents()
+          //------
+        }
       }
     },
     clickText(){
       this.colseDropDown()
-      this.captureRef.style.cursor = "text"
+      this.assistRef.style.cursor = "text"
+      this.inputText = true
+
+      this.assistRef.onmousedown = (e) => {
+        let x = e.clientX,y=e.clientY
+        const textInput = document.createElement('div')
+        textInput.className = 'textInput'
+        textInput.contentEditable = true
+        textInput.style.position = 'absolute'
+        textInput.style.left = x + 'px'
+        textInput.style.top = y + 'px'
+        textInput.style.zIndex = 9999
+        textInput.style.color = this.config.lineColor
+        textInput.style.padding = '5px'
+        textInput.style.lineHeight = this.fontSize + 'px'
+        textInput.style.fontSize = this.fontSize + 'px'
+        textInput.style.fontFamily = 'Microsoft YaHei,Sans Serif,System UI'
+        textInput.style.cursor = 'text'
+        textInput.onblur = this.textInputBlur
+        textInput.onkeydown = this.textInputKeyDown
+        this.$root.$el.appendChild(textInput)
+
+        document.onmousemove = e => {
+            textInput.style.width =  e.clientX - x + "px";
+            textInput.style.height =  e.clientY - y + "px";
+        }
+        document.onmouseup = () => {
+          textInput.focus()
+          document.onmousemove = null;
+          this.assistRef.onmousedown = null
+        }
+      }
     },
     clickBrush(){
       this.colseDropDown()
-      this.captureRef.style.cursor = this.brushCursor
+      this.assistRef.style.cursor = this.brushCursor
 
-      this.captureRef.onmousedown = e =>{
+      this.assistRef.onmousedown = e =>{
         let x1 = e.clientX,
             y1 = e.clientY,
             left = this.canvasX,
@@ -328,32 +507,28 @@ export default {
         //设置样式
         this.setStyle()
         //开始绘制
-        // this.ctx.beginPath()
-        this.ctx.moveTo(X,Y)
-        //记录当前画布状态,以备进行撤销操作
-        let preData = this.ctx.getImageData(0,0,this.canvasWidth,this.canvasHeight)
-        this.undoStack.push(preData)
-
+        // this.displayCtx.beginPath()
+        this.displayCtx.moveTo(X,Y)
         //绘制过程
         document.onmousemove = e => {
           let x2 = e.clientX,
               y2 = e.clientY,
               X2 = x2 - left,
               Y2 = y2 - top
-          this.ctx.lineTo(X2,Y2)
-          this.ctx.stroke()
+          this.displayCtx.lineTo(X2,Y2)
+          this.displayCtx.stroke()
         }
-      }
       document.onmouseup = () => {
-        //记录绘制完成后的状态
-        let preData = this.ctx.getImageData(0,0,this.canvasWidth,this.canvasHeight)
-        this.undoStack.push(preData)
+        //记录当前的状态
+        let currentData = this.displayCtx.getImageData(0,0,this.canvasWidth,this.canvasHeight)
+        this.recordsQueue.push(currentData)
 
+        //记录当前的状态并清理事件
+        this.recordAndClearEvents()
         //------
-        document.onmousemove = null
+      }
       }
     },
-
     clickLineShape(){
       this.showColorPicker = false
       this.showLineShape = !this.showLineShape
@@ -361,29 +536,87 @@ export default {
     clickColor(){
       this.showLineShape = false
       this.showColorPicker = !this.showColorPicker
-      const mask = document.getElementById('mask')
-      mask.style.cursor = this.showColorPicker? this.pickerCursor:'default'
     },
     clickRecognition(){
       this.colseDropDown()
     },
     clickNo() {
+      //关闭下拉框
       this.colseDropDown()
+      //初始化选择区域状态
       this.$emit('initSelect')
-      this.captureRef.style.cursor = 'move'
-
-      this.undoStack = []
-      this.redoStack = []
-      this.ctx.clearRect(0,0,this.canvasWidth,this.canvasHeight)
+      //改变为适合的cursor
+      this.assistRef.style.cursor = 'move'
+      //清空画布
+      this.recordsQueue = []
+      this.displayCtx.clearRect(0,0,this.canvasWidth,this.canvasHeight)
+      //清空文本框
+      const textInputs = document.getElementsByClassName('textInput')
+      textInputs.forEach(div=>this.$root.$el.removeChild(div))
     },
     clickYes(){
       this.colseDropDown()
-      let url = this.captureRef.toDataURL('image/png')
+      let url = this.displayRef.toDataURL('image/png')
       let img = new Image()
       img.src = url
       img.style.cssText = 'position:absolute;left:0px;top:0px'
       document.body.appendChild(img)
+      navigator.clipboard.writeText(this.displayRef)
       //....
+    },
+    textInputBlur(e){
+      if(!e.target.textContent) return
+
+      //暂未实现改变字体大小,用文本编辑器又没多大必要
+      let x = parseInt(e.target.style.left)-this.canvasX + 5  // padding 5px
+      let y = parseInt(e.target.style.top)-this.canvasY + 5  //
+      let divWidth = parseInt(e.target.style.width)
+      let text = e.target.innerHTML  //like: 'afaf<div><br></div><div>gagdfgsdfg</div><div>hdfhh</div>'
+
+      let rows = []
+      text.split('<div>').forEach(row => (
+        rows.push(row.replace(/<\/div>/g,'').replace(/<br>/g,'').replace(/&nbsp;/g,''))
+        )
+      )
+
+      let totalLength = this.displayCtx.measureText(rows[0]).width //第一行
+      let n = Math.ceil(totalLength/divWidth) //回车之前的文字行数
+      let words = Math.floor((divWidth-10-4)/(this.fontSize+4)) //一行大约多少字符,width:padding 5 border 2 / 字体宽度+间距
+
+      this.displayCtx.font = `${this.fontSize}px Microsoft YaHei,Sans Serif,System UI`
+      this.displayCtx.strokeStyle = this.config.lineColor
+      let lineGap = 2
+      rows.forEach((row,index)=>{
+        if(index===0){
+          for(let i=1;i<=n;i++){
+            let txt = ''
+            for(let j in row){
+              if(j< i*words && j>=(i-1)*words){
+                txt+=row[j]
+              }
+            }
+            this.displayCtx.strokeText(txt,x,y+(this.fontSize+lineGap)*i)
+            txt = ''
+          }
+        }else{
+          this.displayCtx.strokeText(row,x,y+(this.fontSize+lineGap)*(n+index))
+        }
+      })
+
+      //移除dom元素
+      this.$root.$el.removeChild(e.target)
+      //记录当前状态
+      let currentData = this.displayCtx.getImageData(0,0,this.canvasWidth,this.canvasHeight)
+      this.recordsQueue.push(currentData)
+    },
+    textInputKeyDown(e){
+      if((e.target.innerHTML==='' && e.keyCode===8)){
+        this.$root.$el.removeChild(e.target)
+      }
+      if(e.keyCode===46){
+        e.target.innerHTML = ''
+        this.$root.$el.removeChild(e.target)
+      }
     }
   },
 }
@@ -432,7 +665,7 @@ export default {
       height: 10%;
       min-height: 140px;
       li{
-        padding: 11px 10px;
+        padding: 16px 10px 6px 10px;
         &:nth-child(1){
           padding-top: 20px;
         }
@@ -464,12 +697,6 @@ export default {
         border: none;
         border-bottom:6px #fff solid;
       }
-      .dot-line{
-        width:100px;
-        height: 0px;
-        border:none;
-        border-bottom:3px #fff dotted;
-      }
       .dash-line{
         width:100px;
         height: 0px;
@@ -489,9 +716,9 @@ export default {
     .range-input{
       position: absolute;
       transform: rotate(90deg);
-      top:50%;
-      left:48%;
-      width:80%;
+      top:48%;
+      left:55%;
+      width:65%;
     }
   }
 }

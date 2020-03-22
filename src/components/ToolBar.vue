@@ -94,10 +94,11 @@
         <span><b-icon icon="camera"></b-icon></span>
       </b-button>
 
-      <!-- <b-tooltip triggers='focus' target='-button' title='历史'></b-tooltip> -->
-      <!-- <b-button id='">-button' @click="click">
-        <span><b-icon icon="images"></b-icon></span>
-      </b-button> -->
+      <b-tooltip triggers='focus' target='save-button' title="另存"></b-tooltip>
+      <b-button id='save-button' @click="clickSave">
+        <span><b-icon icon="download"></b-icon></span>
+      </b-button>
+
       <b-tooltip triggers='focus' target='no-button' title='取消'></b-tooltip>
       <b-button id='no-button' @click="clickNo">
         <span><b-icon icon="x"></b-icon></span>
@@ -109,6 +110,7 @@
       </b-button>
 
     </b-button-group>
+    <audio :src="mp3path" ref='audio'></audio>
   </div>
 
 </template>
@@ -117,9 +119,15 @@
 import brush from '../assets/brush.svg'
 import feather from '../assets/feather.svg'
 // import picker from '../assets/picker.svg'
+import mp3 from '../assets/iphone.mp3'
 
 import ColorPicker from '@caohenghu/vue-colorpicker'
 import arrowCoordinate from '../utils/arrowCoordinate'
+import { clipboard, nativeImage, remote } from 'electron'
+import fs from 'fs'
+import path from 'path'
+
+const savePath = remote.app.getPath('pictures')
 
 export default {
   props:{
@@ -140,6 +148,7 @@ export default {
       featherCursor:`url(${feather}) 0 30,default`,
       brushCursor: `url(${brush}) 0 30,default`,
       // pickerCursor:`url(${picker}) 0 30,default`,
+      mp3path:mp3,
 
       config:{
         lineWidth:2,
@@ -154,6 +163,8 @@ export default {
       },
 
       recordsQueue:[0],
+
+      savePath: savePath
     }
   },
   computed:{
@@ -213,7 +224,7 @@ export default {
           this.config.lineShape = 'solid'
           this.config.radius = '50%'
           this.config.lineDash = [0,0]
-          this.clickLine()
+          this.clickLine() //小bug，点击了会关闭下拉框，且和clickCircle相互影响
           break
         case 'dashed':
           this.config.lineDash = [12,10]
@@ -416,7 +427,7 @@ export default {
       }
     },
     clickLine(){
-      this.colseDropDown()
+      // this.colseDropDown()
       this.assistRef.style.cursor = this.featherCursor
       if(this.config.lineRadius50){
         this.clickCircle()
@@ -540,6 +551,33 @@ export default {
     clickRecognition(){
       this.colseDropDown()
     },
+    clickSave(){
+      remote.dialog.showSaveDialog(
+        {
+          title:'图片另存为',
+          defaultPath:this.savePath,
+          filters:[
+            {'name':'*.png',extensions:['png']},
+            {'name':'*.jpeg',extensions:['jpeg']},
+          ]
+        }
+      ).then(res=>{
+        const { ext } = path.parse(res.filePath)
+        let url = this.displayRef.toDataURL('image/png')
+        if (ext==='.jpeg'|| ext==='.jpg'){
+          url = this.displayRef.toDataURL('image/jpeg')
+        }
+        const imageData= url.replace(/^data:image\/\w+;base64,/, "");
+        const imageBuffer = new Buffer(imageData, 'base64')
+        // fs.writeFile(res.filePath, imageBuffer)
+        const writeStream = fs.createWriteStream(res.filePath,{encoding:'utf8',autoClose:true})
+        writeStream.write(imageBuffer)
+        writeStream.on('error',err=>{
+          console.log(err);
+          new Notification('保存失败')
+        })
+      })
+    },
     clickNo() {
       //关闭下拉框
       this.colseDropDown()
@@ -556,13 +594,20 @@ export default {
     },
     clickYes(){
       this.colseDropDown()
+      // 复制到clipboard
       let url = this.displayRef.toDataURL('image/png')
-      let img = new Image()
-      img.src = url
-      img.style.cssText = 'position:absolute;left:0px;top:0px'
-      document.body.appendChild(img)
-      navigator.clipboard.writeText(this.displayRef)
-      //....
+      let image = nativeImage.createFromDataURL(url)
+      clipboard.writeImage(image)
+      this.$refs.audio.play()
+
+      //显示通知
+      let notification = new Notification('', {
+          body: '已复制到剪贴板',
+          silent:true,
+        })
+      setTimeout(()=>{
+        notification.close()
+      },1000)
     },
     textInputBlur(e){
       if(!e.target.textContent) return
@@ -627,7 +672,8 @@ export default {
   z-index: 999;
   .btn-group {
     button {
-      padding: 5px 10px 8px 10px;
+      padding: 5px 7.5px;
+      margin:0px;
       span {
         display: inline-block;
         transform: scale(1.5);
@@ -665,7 +711,7 @@ export default {
       height: 10%;
       min-height: 140px;
       li{
-        padding: 16px 10px 6px 10px;
+        padding: 10px;
         &:nth-child(1){
           padding-top: 20px;
         }

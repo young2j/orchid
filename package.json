@@ -8,12 +8,11 @@
     "serve": "vue-cli-service serve --mode development",
     "build": "vue-cli-service build --mode production",
     "lint": "vue-cli-service lint",
-    "dev": "concurrently 'npm run serve' 'wait-on http://localhost:8080 && electron .'",
-    "start": "concurrently 'npm run build' 'electron . '"
+    "dev": "concurrently \"npm run serve\" \"wait-on http://localhost:8080 && electron .\"",
+    "start": "concurrently \"npm run build && electron .\""
   },
   "dependencies": {
-    "core-js": "^3.6.4",
-    "roughjs": "^4.0.4"
+    "core-js": "^3.6.4"
   },
   "devDependencies": {
     "@caohenghu/vue-colorpicker": "^1.2.4",
@@ -26,7 +25,7 @@
     "bootstrap-vue": "^2.7.0",
     "concurrently": "^5.1.0",
     "devtron": "^1.4.0",
-    "electron": "^8.1.1",
+    "electron":"^8.1.1",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.1.2",
     "less": "^3.0.4",

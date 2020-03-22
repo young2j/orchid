@@ -1,14 +1,25 @@
-const { app, screen } = require('electron')
+const { app, screen,Menu,Tray } = require('electron')
 // const path = require('path')
 
 const AppWindow = require('./src/utils/appWindow')
 
 
-
+let tray = null
 
 app.on('ready', () => {
     require('devtron').install()
+    //------------------------------
+    tray = new Tray('./src/assets/樱花.ico') //🌸
+    const contextMenu = Menu.buildFromTemplate([
+        { label: 'Item1', type: 'radio' },
+        { label: 'Item2', type: 'radio' },
+        { label: 'Item3', type: 'radio', checked: true },
+        { label: 'Item4', type: 'radio' }
+    ])
+    tray.setToolTip('Orchid')
+    tray.setContextMenu(contextMenu)
 
+    //-------------------------------
     const { width, height } = screen.getPrimaryDisplay().workAreaSize
     console.log(width,height);
 
@@ -17,13 +28,12 @@ app.on('ready', () => {
         height: 800,
         // width,
         // height,
-        // resizable:false,
         resizable: true,
-        movable: false,
+        movable: true,
         // frame:false,
-        transparent: true,
-        opacity: 0,
-        fullscreen: process.platform === 'win32' || undefined,
+        // transparent: true,
+        // opacity: 0, //windows
+        // fullscreen: process.platform === 'win32' || undefined,
         // fullscreen: true,
         // alwaysOnTop:true,
         hasShadow: false

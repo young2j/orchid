@@ -17,9 +17,7 @@ export const captureScreen = () => {
       },
       cursor:'never'
     }
-  })
-  .then((stream) => handleStream(stream))
-  .catch(err => console.log(err.name + ": " + err.message))
+  }).then( stream => handleStream(stream))
 }
 
 
@@ -39,12 +37,8 @@ const handleStream = (stream) => {
       stream.getTracks()[0].stop() //关闭视频流，序号是反向的，此处只有一个所以是0
       
       //移除video元素
-      document.getElementById('app').removeChild(video)
+      // document.getElementById('app').removeChild(video)
     }
     )
-    // stream.getTracks()[0].stop() //关闭视频流，序号是反向的，此处只有一个所以是0
-    
-    //移除video元素
-    // document.getElementById('app').removeChild(video)
   }
 }

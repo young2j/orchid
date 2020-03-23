@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="layout">
     <div id="mask"
       @mousedown="onSelectRegion"
       :style="{cursor: completeSelectRegion? 'default':'crosshair'}">
@@ -39,7 +39,7 @@
       :clipDesktop="clipDesktop"
     />
 <!-- 颜色、位置提示框 -->
-    <ColorTip v-show="!isCapture"/>
+    <ColorTip v-show="!isCapture" v-if="showColorTip"/>
 <!-- 桌面捕获 -->
     <video id="video"></video>
     <canvas id="desktop-canvas" ref='desktop'></canvas>
@@ -51,9 +51,13 @@
 import ToolBar from "./components/ToolBar";
 import ColorTip from './components/ColorTip'
 import { captureScreen } from "./utils/captureScreen";
+import {ipcRenderer} from 'electron'
+
+
+
 
 export default {
-  name: "App",
+  name: "app",
   components: {
     ToolBar,
     ColorTip
@@ -76,7 +80,7 @@ export default {
         background:'rgba(0,0,0,0)',
         draggable: false,
         borderWidth:'2px',
-        borderColor:'rgba(255,100,0,0.7)',
+        borderColor:this.$root.$data.captureColor,
         borderStyle:'solid',
         boxShadow: "0px 0px 2px 2px rgba(85, 80, 80, 0.3)",
         left: "0px", // =this.x
@@ -84,10 +88,15 @@ export default {
         width: "0px", //this.width
         height: "0px" //this.height
       },
+      showColorTip: this.$root.$data.showColorTip
     };
   },
-  mounted: function() {
+  mounted(){
     captureScreen()
+    ipcRenderer.on('flushDesktopCapture',()=>{
+  
+  captureScreen()
+})
   },
   computed:{
     toolbarBottom(){ //传给子组件，给colorpicker定位
@@ -253,15 +262,16 @@ body {
   padding: 0px;
   box-sizing: border-box;
   overflow: hidden;
-  background: transparent;
+  background:rgba(0, 0, 0, 0);
 }
-#app {
+#app,#layout {
   width: 100%;
   height: 100%;
   z-index: 1;
+  background:rgba(0, 0, 0, 0);
 }
 #mask {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0);
   width: 100%;
   height: 100%;
   z-index: 99;
@@ -276,6 +286,6 @@ body {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  // visibility: hidden;
+  visibility: hidden;
 }
 </style>

@@ -7,6 +7,7 @@ module.exports = {
     target: 'electron-renderer',
     node:{
       __dirname:false
-    }
-  }
+    },
+  },
+  publicPath:'./' //Failed to load resource: net::ERR_FILE_NOT_FOUND
 }

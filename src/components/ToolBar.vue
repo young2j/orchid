@@ -4,59 +4,59 @@
     <b-button-group @click="$emit('closeDrag')">
 
       <b-tooltip triggers='focus' target='orchid-button' title="拖动"></b-tooltip>
-      <b-button id='orchid-button'>
+      <b-button :variant="themeDark? 'secondary':'light'" id='orchid-button'>
         <span>🌸</span>
       </b-button>
 
       <b-tooltip triggers='focus' target='undo-button' title="撤销"></b-tooltip>
-      <b-button id='undo-button' @click="clickUndo">
+      <b-button :variant="themeDark? 'secondary':'light'" id='undo-button' @click="clickUndo">
         <span><b-icon icon="reply-fill" flip-h></b-icon></span>
       </b-button>
 
       <b-tooltip triggers='focus' target='redo-button' title='恢复'></b-tooltip>
-      <b-button id='redo-button' @click="clickRedo">
+      <b-button :variant="themeDark? 'secondary':'light'" id='redo-button' @click="clickRedo">
         <span><b-icon icon="reply-fill"></b-icon></span>
       </b-button>
 
       <b-tooltip triggers='focus' target='square-button' title='矩形'></b-tooltip>
-      <b-button id='square-button' @click="clickSquare">
+      <b-button :variant="themeDark? 'secondary':'light'" id='square-button' @click="clickSquare">
         <span><b-icon icon="square"></b-icon></span>
       </b-button>
 
       <b-tooltip triggers='focus' target='circle-button' title='圆形'></b-tooltip>
-      <b-button id='circle-button' @click="clickCircle">
+      <b-button :variant="themeDark? 'secondary':'light'" id='circle-button' @click="clickCircle">
         <span><b-icon icon="circle"></b-icon></span>
       </b-button>
 
       <b-tooltip triggers='focus' target='arrow-button' title='箭头'></b-tooltip>
-      <b-button id='arrow-button' @click="clickArrow">
+      <b-button :variant="themeDark? 'secondary':'light'" id='arrow-button' @click="clickArrow">
         <span><b-icon icon="arrow-right"></b-icon></span>
       </b-button>
 
       <b-tooltip triggers='focus' target='line-button' title='直线'></b-tooltip>
-      <b-button id='line-button' @click="clickLine">
+      <b-button :variant="themeDark? 'secondary':'light'" id='line-button' @click="clickLine">
         <span><b-icon icon="dash"></b-icon></span>
       </b-button>
 
       <b-tooltip triggers='focus' target='text-button' title='文本'></b-tooltip>
-      <b-button id='text-button' @click="clickText">
+      <b-button :variant="themeDark? 'secondary':'light'" id='text-button' @click="clickText">
         <span><b-icon icon="fonts"></b-icon></span>
       </b-button>
 
       <b-tooltip triggers='focus' target='brush-button' title='涂鸦'></b-tooltip>
-      <b-button id='brush-button' @click="clickBrush">
+      <b-button :variant="themeDark? 'secondary':'light'" id='brush-button' @click="clickBrush">
         <span><b-icon icon="brush"></b-icon></span>
       </b-button>
 
       <b-tooltip triggers='focus' target='lineshape-button' title='线型'></b-tooltip>
       <!-- 框架的<b-dropdown/>组件存在无法更改背景色的bug，这里用原生写一个。 -->
-      <b-button id="lineshape-button">
+      <b-button :variant="themeDark? 'secondary':'light'" id="lineshape-button">
         <span @click="clickLineShape"><b-icon icon="list"></b-icon></span>
         <div class='lineshape-content'
           v-show="showLineShape"
           :style="{top:toolbarBottom>160? 40+'px':-143+'px'}"
         >
-        <ul>
+        <ul :style="{background:themeDark? '#6c757d':'#fff'}">
           <li>
             <div :style="selectLineStyle"></div>
             <p class='line-width'>{{config.lineWidth+'px'}}</p>
@@ -79,33 +79,33 @@
       </b-button>
 
       <b-tooltip triggers='focus' target='color-button' title='颜色' custom-class='tooltip'></b-tooltip>
-      <b-button id='color-button'>
+      <b-button :variant="themeDark? 'secondary':'light'" id='color-button'>
         <span @click="clickColor"><b-icon icon="pen"></b-icon></span>
         <ColorPicker id='colorpicker'
           v-show="showColorPicker"
-          :style="{top:toolbarBottom>380? 40+'px':-378+'px'}"
+          :style="{top:toolbarBottom>380? 40+'px':-378+'px',background:themeDark? '#6c757d':'#fff'}"
           :color="config.lineColor"
           @changeColor="changeColor"
         />
       </b-button>
 
       <b-tooltip triggers='focus' target='recognition-button' title='识别'></b-tooltip>
-      <b-button id='recognition-button' @click="clickRecognition">
+      <b-button :variant="themeDark? 'secondary':'light'" id='recognition-button' @click="clickRecognition">
         <span><b-icon icon="camera"></b-icon></span>
       </b-button>
 
       <b-tooltip triggers='focus' target='save-button' title="另存"></b-tooltip>
-      <b-button id='save-button' @click="clickSave">
+      <b-button :variant="themeDark? 'secondary':'light'" id='save-button' @click="clickSave">
         <span><b-icon icon="download"></b-icon></span>
       </b-button>
 
       <b-tooltip triggers='focus' target='no-button' title='取消'></b-tooltip>
-      <b-button id='no-button' @click="clickNo">
+      <b-button :variant="themeDark? 'secondary':'light'" id='no-button' @click="clickNo">
         <span><b-icon icon="x"></b-icon></span>
       </b-button>
 
       <b-tooltip triggers='focus' target='yes-button' title='确定'></b-tooltip>
-      <b-button id='yes-button' @click="clickYes">
+      <b-button :variant="themeDark? 'secondary':'light'" id='yes-button' @click="clickYes">
         <span><b-icon icon="check"></b-icon></span>
       </b-button>
 
@@ -123,11 +123,11 @@ import mp3 from '../assets/iphone.mp3'
 
 import ColorPicker from '@caohenghu/vue-colorpicker'
 import arrowCoordinate from '../utils/arrowCoordinate'
+
 import { clipboard, nativeImage, remote } from 'electron'
 import fs from 'fs'
 import path from 'path'
 
-const savePath = remote.app.getPath('pictures')
 
 export default {
   props:{
@@ -144,6 +144,7 @@ export default {
       showLineShape:false,
       inputText:false,
       fontSize:16,
+      themeDark:this.$root.$data.theme==='dark',
 
       featherCursor:`url(${feather}) 0 30,default`,
       brushCursor: `url(${brush}) 0 30,default`,
@@ -164,7 +165,6 @@ export default {
 
       recordsQueue:[0],
 
-      savePath: savePath
     }
   },
   computed:{
@@ -555,11 +555,12 @@ export default {
       remote.dialog.showSaveDialog(
         {
           title:'图片另存为',
-          defaultPath:this.savePath,
+          defaultPath:this.$root.$data.savePath,
           filters:[
             {'name':'*.png',extensions:['png']},
             {'name':'*.jpeg',extensions:['jpeg']},
-          ]
+          ],
+          nameFieldLabel: new Date().toLocaleTimeString()
         }
       ).then(res=>{
         const { ext } = path.parse(res.filePath)
@@ -574,7 +575,16 @@ export default {
         writeStream.write(imageBuffer)
         writeStream.on('error',err=>{
           console.log(err);
-          new Notification('保存失败')
+          if(this.$root.$data.showMessage){
+            let errNotification = new Notification(
+              '保存失败,您可能取消了操作',
+              { silent:true }
+            )
+            setTimeout(()=>{
+              errNotification.close()
+            },1500)
+          }
+          return 
         })
       })
     },
@@ -593,21 +603,28 @@ export default {
       textInputs.forEach(div=>this.$root.$el.removeChild(div))
     },
     clickYes(){
-      this.colseDropDown()
+      const {showMessage,playSound} = this.$root.$data
       // 复制到clipboard
       let url = this.displayRef.toDataURL('image/png')
       let image = nativeImage.createFromDataURL(url)
       clipboard.writeImage(image)
-      this.$refs.audio.play()
-
+      if(playSound) this.$refs.audio.play()
       //显示通知
-      let notification = new Notification('', {
+      if(showMessage){
+        let notification = new Notification('', {
           body: '已复制到剪贴板',
           silent:true,
         })
-      setTimeout(()=>{
-        notification.close()
-      },1000)
+        setTimeout(()=>{
+          notification.close()
+        },1000)
+      }
+
+      //-----------
+      this.clickNo()
+      //最小化/隐藏窗口
+      remote.getCurrentWindow().minimize()
+      // remote.getCurrentWindow().hide()
     },
     textInputBlur(e){
       if(!e.target.textContent) return

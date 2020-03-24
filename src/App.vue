@@ -5,28 +5,44 @@
       :style="{cursor: completeSelectRegion? 'default':'crosshair'}">
     </div>
 
+<!-- caputure region -->
     <div id="captureRegion"
       :style="captureRegionStyle"
       v-show="isCapture">
     </div>
+
 <!-- 两个canvas，一个主显示，一个主辅助 -->
+      <!-- canvas: mouseup时设置 -->
+      <!-- :width="canvasWidth*pixelRatio"
+      :height="canvasHeight*pixelRatio" -->
+      <!-- style: mouseup时设置 -->
+      <!-- width:canvasWidth+'px',
+      height:canvasHeight+'px', -->
     <canvas id='display-canvas'
       ref='display'
       v-show="completeSelectRegion"
-      :width="canvasWidth"
-      :height="canvasHeight"
-      :style="{position:'absolute',left:canvasX+'px',top:canvasY+'px'}"
+      :style="{
+        position:'absolute',
+        left:canvasX+'px',
+        top:canvasY+'px',
+        zIndex:999,
+        pointerEvents:'none'}"
       >
     </canvas>
 
+    <!-- width/height：同上 -->
     <canvas id='assist-canvas'
       ref='assist'
       v-show="completeSelectRegion"
-      :width="canvasWidth"
-      :height="canvasHeight"
-      :style="{position:'absolute',left:canvasX+'px',top:canvasY+'px',cursor:'move'}"
+      :style="{
+        position:'absolute',
+        left:canvasX+'px',
+        top:canvasY+'px',
+        zIndex:999,
+        cursor:'move'}"
       @mousedown="onDrag">
     </canvas>
+
 
 <!-- 工具条 -->
     <ToolBar
@@ -50,10 +66,8 @@
 <script>
 import ToolBar from "./components/ToolBar";
 import ColorTip from './components/ColorTip'
-import { captureScreen } from "./utils/captureScreen";
+import { captureScreen,setCanvas} from "./utils/captureScreen";
 import {ipcRenderer} from 'electron'
-
-
 
 
 export default {
@@ -68,6 +82,7 @@ export default {
       y: 0,
       width: 0,
       height: 0,
+      pixelRatio:window.devicePixelRatio,
 
       isCapture: false,
       completeSelectRegion: false,
@@ -75,8 +90,8 @@ export default {
 
       captureRegionStyle: {
         position: "absolute",
-        // zIndex: 999,
-        cursor:'move',
+        zIndex: 99,
+        // cursor:'move',
         background:'rgba(0,0,0,0)',
         draggable: false,
         borderWidth:'2px',
@@ -88,15 +103,13 @@ export default {
         width: "0px", //this.width
         height: "0px" //this.height
       },
+
       showColorTip: this.$root.$data.showColorTip
     };
   },
   mounted(){
     captureScreen()
-    ipcRenderer.on('flushDesktopCapture',()=>{
-  
-  captureScreen()
-})
+    ipcRenderer.on('flushDesktopCapture',()=>captureScreen()) //F1
   },
   computed:{
     toolbarBottom(){ //传给子组件，给colorpicker定位
@@ -119,10 +132,9 @@ export default {
   },
   methods: {
     clipDesktop(){
-      let desktop = this.$refs.desktop,
-      ctx = this.$refs.display.getContext('2d')
+      let desktop = this.$refs.desktop
+      const ctx = this.$refs.display.getContext('2d')
       ctx.clearRect(0,0,this.canvasWidth,this.canvasHeight)
-
       ctx.drawImage(
         desktop,
         this.canvasX,this.canvasY,this.canvasWidth,this.canvasHeight,
@@ -175,7 +187,11 @@ export default {
         //放开鼠标，清除移动事件，生成选区
         document.onmousemove = null;
         this.completeSelectRegion = this.canDrag = this.isCapture;
-        //----
+        
+        //-------设置宽高、清空画布都会使canvas状态清空，所以在这里处理高dpi模糊问题
+        setCanvas(this.$refs.display,this.canvasWidth,this.canvasHeight)
+        setCanvas(this.$refs.assist,this.canvasWidth,this.canvasHeight)
+        //-------
         this.clipDesktop()
       }
     },
@@ -262,16 +278,16 @@ body {
   padding: 0px;
   box-sizing: border-box;
   overflow: hidden;
-  background:rgba(0, 0, 0, 0);
+  background: rgba(0, 0, 0, 0); //关键在这里，调试时发现是#fff
 }
 #app,#layout {
   width: 100%;
   height: 100%;
   z-index: 1;
-  background:rgba(0, 0, 0, 0);
+  // background: rgba(0, 0, 0, 0.1);
 }
 #mask {
-  background: rgba(0, 0, 0, 0);
+  // background: rgba(0, 0, 0, 0.1);
   width: 100%;
   height: 100%;
   z-index: 99;
@@ -283,8 +299,8 @@ body {
   top: 0px;
   left: 0px;
   z-index: -999;
-  width: 100%;
-  height: 100%;
+  // width: 100%;
+  // height: 100%;
   pointer-events: none;
   visibility: hidden;
 }

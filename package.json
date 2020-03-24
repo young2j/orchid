@@ -19,7 +19,7 @@
     "@caohenghu/vue-colorpicker": "^1.2.4",
     "@vue/cli-plugin-babel": "~4.2.0",
     "@vue/cli-plugin-eslint": "~4.2.0",
-    "@vue/cli-service": "~4.2.0",
+    "@vue/cli-service": "^4.2.3",
     "babel-eslint": "^10.0.3",
     "babel-plugin-component": "^1.1.1",
     "bootstrap": "^4.4.1",

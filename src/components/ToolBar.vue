@@ -124,7 +124,7 @@ import mp3 from '../assets/iphone.mp3'
 import ColorPicker from '@caohenghu/vue-colorpicker'
 import arrowCoordinate from '../utils/arrowCoordinate'
 
-import { clipboard, nativeImage, remote } from 'electron'
+import { clipboard, nativeImage, remote, ipcRenderer } from 'electron'
 import fs from 'fs'
 import path from 'path'
 
@@ -196,6 +196,9 @@ export default {
 
     this.assistRef = document.getElementById('assist-canvas')
     this.assistCtx = this.assistRef.getContext('2d')
+
+    //----ESC
+    ipcRenderer.on('pressESC',()=>this.clickNo())
   },
   methods: {
     changeColor(color) {
@@ -566,7 +569,7 @@ export default {
         const { ext } = path.parse(res.filePath)
         let url = this.displayRef.toDataURL('image/png')
         if (ext==='.jpeg'|| ext==='.jpg'){
-          url = this.displayRef.toDataURL('image/jpeg')
+          url = this.displayRef.toDataURL('image/jpeg',1)
         }
         const imageData= url.replace(/^data:image\/\w+;base64,/, "");
         const imageBuffer = new Buffer(imageData, 'base64')
@@ -574,7 +577,7 @@ export default {
         const writeStream = fs.createWriteStream(res.filePath,{encoding:'utf8',autoClose:true})
         writeStream.write(imageBuffer)
         writeStream.on('error',err=>{
-          console.log(err);
+          if(err) throw err
           if(this.$root.$data.showMessage){
             let errNotification = new Notification(
               '保存失败,您可能取消了操作',
@@ -606,6 +609,8 @@ export default {
       const {showMessage,playSound} = this.$root.$data
       // 复制到clipboard
       let url = this.displayRef.toDataURL('image/png')
+      // let url = this.displayRef.toDataURL('image/jpeg',1)
+      
       let image = nativeImage.createFromDataURL(url)
       clipboard.writeImage(image)
       if(playSound) this.$refs.audio.play()
@@ -614,6 +619,7 @@ export default {
         let notification = new Notification('', {
           body: '已复制到剪贴板',
           silent:true,
+          icon:nativeImage.createFromDataURL(url)
         })
         setTimeout(()=>{
           notification.close()
@@ -643,10 +649,12 @@ export default {
 
       let totalLength = this.displayCtx.measureText(rows[0]).width //第一行
       let n = Math.ceil(totalLength/divWidth) //回车之前的文字行数
-      let words = Math.floor((divWidth-10-4)/(this.fontSize+4)) //一行大约多少字符,width:padding 5 border 2 / 字体宽度+间距
+      let words = Math.ceil((divWidth-10-4)/(this.fontSize+4)) //一行大约多少字符,width:padding 5 border 2 / 字体宽度+间距
 
-      this.displayCtx.font = `${this.fontSize}px Microsoft YaHei,Sans Serif,System UI`
-      this.displayCtx.strokeStyle = this.config.lineColor
+      this.displayCtx.font = `${this.fontSize}px 黑体,Microsoft YaHei,Sans Serif,System UI`
+      // this.displayCtx.strokeStyle = this.config.lineColor
+      this.displayCtx.fillStyle = this.config.lineColor
+      this.displayCtx.lineWidth = this.config.lineWidth
       let lineGap = 2
       rows.forEach((row,index)=>{
         if(index===0){
@@ -657,11 +665,13 @@ export default {
                 txt+=row[j]
               }
             }
-            this.displayCtx.strokeText(txt,x,y+(this.fontSize+lineGap)*i)
+            // this.displayCtx.strokeText(txt,x,y+(this.fontSize+lineGap)*i)
+            this.displayCtx.fillText(txt,x,y+(this.fontSize+lineGap)*i)
             txt = ''
           }
         }else{
-          this.displayCtx.strokeText(row,x,y+(this.fontSize+lineGap)*(n+index))
+          // this.displayCtx.strokeText(row,x,y+(this.fontSize+lineGap)*(n+index))
+          this.displayCtx.fillText(row,x,y+(this.fontSize+lineGap)*(n+index))
         }
       })
 
@@ -672,10 +682,10 @@ export default {
       this.recordsQueue.push(currentData)
     },
     textInputKeyDown(e){
-      if((e.target.innerHTML==='' && e.keyCode===8)){
+      if((e.target.innerHTML==='' && e.keyCode===8)){ //backspace
         this.$root.$el.removeChild(e.target)
       }
-      if(e.keyCode===46){
+      if(e.keyCode===46){ //del
         e.target.innerHTML = ''
         this.$root.$el.removeChild(e.target)
       }

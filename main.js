@@ -5,7 +5,7 @@ const AppWindow = require('./src/utils/appWindow')
 const createTray = require('./src/mainProcess/appTray')
 
 app.on('ready', () => {
-    require('devtron').install()
+    // require('devtron').install()
     //-------------------------------
     //主窗口
     const { width, height } = screen.getPrimaryDisplay().workAreaSize
@@ -18,10 +18,10 @@ app.on('ready', () => {
         height,
         resizable: false,
         movable: false,
-        // frame:false,
+        frame:false,
         transparent: true,
         // backgroundColor:"#000000",//windwos
-        // opacity: 0.8, //windows
+        // opacity: 0.3, //windows
         fullscreen: true,
         alwaysOnTop:true,
         skipTaskbar:true,
@@ -80,8 +80,15 @@ app.on('ready', () => {
     globalShortcut.register('F1',()=>{
         ipcMain.emit('capture')
     })
-    globalShortcut.register('ESC',()=>{
-        mainWindow.minimize()
+
+    mainWindow.on('show',()=>{
+        globalShortcut.register('ESC',()=>{
+            mainWindow.webContents.send('pressESC')
+            mainWindow.minimize()
+        })
+    })
+    mainWindow.on('minimize',()=>{
+        globalShortcut.unregister('ESC')
     })
 })
 
@@ -95,9 +102,9 @@ app.on('will-quit', () => {
 
 
 // Quit when all windows are closed.
-// app.on('window-all-closed', function () {
-//     if (process.platform !== 'darwin') app.quit()
-// })
+app.on('window-all-closed', function () {
+    if (process.platform !== 'darwin') app.quit()
+})
 
 // app.on('activate', function () {
 // if (BrowserWindow.getAllWindows().length === 0) createWindow()

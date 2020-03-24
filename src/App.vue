@@ -13,8 +13,8 @@
 
 <!-- 两个canvas，一个主显示，一个主辅助 -->
       <!-- canvas: mouseup时设置 -->
-      <!-- :width="canvasWidth*pixelRatio"
-      :height="canvasHeight*pixelRatio" -->
+      <!-- :width="canvasWidth"
+      :height="canvasHeight" -->
       <!-- style: mouseup时设置 -->
       <!-- width:canvasWidth+'px',
       height:canvasHeight+'px', -->
@@ -46,7 +46,7 @@
 
 <!-- 工具条 -->
     <ToolBar
-      @initSelect="initSelect"
+      @initSelect="initSelect()"
       @closeDrag="canDrag=false"
       v-position="{x,y,width,height}"
       v-show="completeSelectRegion"
@@ -69,6 +69,7 @@ import ColorTip from './components/ColorTip'
 import { captureScreen,setCanvas} from "./utils/captureScreen";
 import {ipcRenderer} from 'electron'
 
+ipcRenderer.on('flushDesktopCapture',()=>captureScreen()) //F1
 
 export default {
   name: "app",
@@ -82,7 +83,7 @@ export default {
       y: 0,
       width: 0,
       height: 0,
-      pixelRatio:window.devicePixelRatio,
+      // pixelRatio:window.devicePixelRatio,
 
       isCapture: false,
       completeSelectRegion: false,
@@ -109,7 +110,6 @@ export default {
   },
   mounted(){
     captureScreen()
-    ipcRenderer.on('flushDesktopCapture',()=>captureScreen()) //F1
   },
   computed:{
     toolbarBottom(){ //传给子组件，给colorpicker定位
@@ -147,10 +147,10 @@ export default {
       this.completeSelectRegion = false;
       this.isCapture = false;
       this.canDrag = true;
-      this.captureRegionStyle.left = 0;
-      this.captureRegionStyle.top = 0;
-      this.captureRegionStyle.width = 0;
-      this.captureRegionStyle.height = 0;
+      this.captureRegionStyle.left = '0px';
+      this.captureRegionStyle.top = '0px';
+      this.captureRegionStyle.width = '0px';
+      this.captureRegionStyle.height = '0px';
     },
     onSelectRegion(e) {
       //鼠标按下开始截图
@@ -235,6 +235,9 @@ export default {
           document.onmousemove = null;
           this.completeSelectRegion = true; //重新选取完成，显示工具条
 
+          //-------设置宽高、清空画布都会使canvas状态清空，所以在这里处理高dpi模糊问题
+          setCanvas(this.$refs.display,this.canvasWidth,this.canvasHeight)
+          setCanvas(this.$refs.assist,this.canvasWidth,this.canvasHeight)
           //------
           this.clipDesktop()
         };
@@ -278,7 +281,7 @@ body {
   padding: 0px;
   box-sizing: border-box;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0); //关键在这里，调试时发现是#fff
+  background: rgba(0, 0, 0, 0.3); //关键在这里，调试时发现是#fff
 }
 #app,#layout {
   width: 100%;
@@ -299,8 +302,8 @@ body {
   top: 0px;
   left: 0px;
   z-index: -999;
-  // width: 100%;
-  // height: 100%;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   visibility: hidden;
 }

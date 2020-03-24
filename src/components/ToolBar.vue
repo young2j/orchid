@@ -156,7 +156,7 @@ export default {
         lineColor:"#6EFF2A",
         lineCap:'round',
         lineDash:[0,0],
-        shadowBlur:2,
+        // shadowBlur:2,
         lineRadius50:false,
         //选项显示用
         lineShape:'solid',
@@ -276,14 +276,14 @@ export default {
       this.displayCtx.lineWidth = this.config.lineWidth
       this.displayCtx.strokeStyle = this.config.lineColor
       this.displayCtx.shadowColor = this.config.lineColor
-      this.displayCtx.shadowBlur = this.config.shadowBlur
+      // this.displayCtx.shadowBlur = this.config.shadowBlur
       this.displayCtx.lineCap = this.config.lineCap
       this.displayCtx.setLineDash(this.config.lineDash)
 
       this.assistCtx.lineWidth = this.config.lineWidth
       this.assistCtx.strokeStyle = this.config.lineColor
       this.assistCtx.shadowColor = this.config.lineColor
-      this.assistCtx.shadowBlur = this.config.shadowBlur
+      // this.assistCtx.shadowBlur = this.config.shadowBlur
       this.assistCtx.lineCap = this.config.lineCap
       this.assistCtx.setLineDash(this.config.lineDash)
     },
@@ -608,8 +608,9 @@ export default {
     clickYes(){
       const {showMessage,playSound} = this.$root.$data
       // 复制到clipboard
-      let url = this.displayRef.toDataURL('image/png')
       // let url = this.displayRef.toDataURL('image/jpeg',1)
+      // let url = document.getElementById('desktop-canvas').toDataURL('image/png')
+      let url = this.displayRef.toDataURL('image/png')
       
       let image = nativeImage.createFromDataURL(url)
       clipboard.writeImage(image)
@@ -619,11 +620,11 @@ export default {
         let notification = new Notification('', {
           body: '已复制到剪贴板',
           silent:true,
-          icon:nativeImage.createFromDataURL(url)
+          icon:url
         })
         setTimeout(()=>{
           notification.close()
-        },1000)
+        },1500)
       }
 
       //-----------
@@ -655,13 +656,13 @@ export default {
       // this.displayCtx.strokeStyle = this.config.lineColor
       this.displayCtx.fillStyle = this.config.lineColor
       this.displayCtx.lineWidth = this.config.lineWidth
-      let lineGap = 2
+      let lineGap = 1 //
       rows.forEach((row,index)=>{
         if(index===0){
-          for(let i=1;i<=n;i++){
+          for(let i=0;i<n;i++){
             let txt = ''
             for(let j in row){
-              if(j< i*words && j>=(i-1)*words){
+              if(j>=i*words && j< (i+1)*words){
                 txt+=row[j]
               }
             }

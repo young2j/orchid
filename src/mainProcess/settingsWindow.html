@@ -28,7 +28,7 @@
       flex:0.7;
       margin-left: 20px;
   }
-/* 最后一行 */
+/* 颜色选择 */
   .color-and-start{
       display: flex;
   }
@@ -88,6 +88,23 @@
   .switch>.switch-text{
       padding-left: 50px;
   }
+
+/* custom-key */
+ #custom-key{
+    text-align: center;
+    width: 250px;
+    height: 30px;
+    background: #fff;
+    box-shadow: 0 0 4px 4px #333c40;
+    border:2px #fff solid;
+    border-radius: 15px;
+    margin: 10px auto;
+    position: absolute;
+    left: 35%;
+    top:95px;
+    z-index: 10;
+    visibility: hidden;
+}
 </style>
 
 <!--  -->
@@ -114,6 +131,13 @@
                 <input type="radio" name="options" id="light-theme"> Light
             </label>
           </div>
+      </div>
+
+      <div class='settings-row'>
+        <div style="flex:0.33;">快截按键 :</div>
+        <div class='btn btn-dark btn-sm' type='button' id='quickKey'>
+            F1
+        </div>
       </div>
 
       <div class='settings-row'>
@@ -157,17 +181,25 @@
         </div>
       </div>
   </div>
+    <input id='custom-key' autofocus/>
 </body>
 <!--  -->
+
 <script>
     const {app,dialog } = require('electron').remote
     const {ipcRenderer} = require('electron')
     const Store = require('electron-store')
     const store = new Store({name:'settings'})
-    
+    const fs = require('fs')
+    const path = require('path')
+
     const  $ = (id)=> document.getElementById(id)
     
-
+    let accelerator
+    fs.readFile(
+        path.join(__dirname,'./accelerator.json'),'utf8',
+        (err,data)=> accelerator=JSON.parse(data)
+        )
 //------------
     document.addEventListener('DOMContentLoaded',()=>{
         let path = store.get('savePath') || app.getPath('pictures')
@@ -214,6 +246,44 @@
             store.set('theme','light')
         }
 
+        //------------------
+        let quickKey = store.get('quickey') || 'F1'
+        $('quickKey').innerText = quickKey
+        $('quickKey').onclick = e =>{
+            $('custom-key').style.visibility = 'visible'
+            $('custom-key').focus()
+
+            let completeSetKey = e =>{
+                $('custom-key').style.visibility = 'hidden'
+                if(e.target.value){
+                    $('quickKey').innerText = e.target.value
+                    store.set('quickKey',e.target.value)
+                }
+            }
+            $('custom-key').onblur = completeSetKey
+
+        
+            $('custom-key').onkeydown = e=>{
+                e.preventDefault()
+                if(e.keyCode===13 || e.keyCode===27){ //enter esc
+                    completeSetKey()
+                }
+                if(e.keyCode===9){ //TAB
+                    e.preventDefault()
+                }
+                
+                let match = e.target.value.match(/\+/g)
+                if(!e.target.value){
+                    e.target.value = accelerator[e.keyCode.toString()]
+                }else if(!match || match.length<2){
+                    e.target.value += '+' + accelerator[e.keyCode.toString()]
+                }else{
+                    e.target.value = null
+                }
+                return
+            }
+    
+        }
         //------------------
         let showColorTip = store.get('showColorTip')
         $('colorTip-switch').innerHTML = showColorTip? `
@@ -299,5 +369,4 @@
         }
     })
 </script>
-
 </html>

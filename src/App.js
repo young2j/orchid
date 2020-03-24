@@ -30,7 +30,7 @@ new Vue({
       showMessage: store.get('showMessage'),
       savePath: store.get('savePath') || remote.app.getPath('pictures'),
       playSound: store.get('playSound'),
-      captureColor: store.get('captureColor') || "#ffffff"
+      captureColor: store.get('captureColor') || "#ffffff",
     }
   },
   render: h => h(App),

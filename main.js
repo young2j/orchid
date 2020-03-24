@@ -1,8 +1,11 @@
 const { app, screen,ipcMain,nativeImage,globalShortcut } = require('electron')
 const path = require('path')
 
-const AppWindow = require('./src/utils/appWindow')
+const AppWindow = require('./src/mainProcess/appWindow')
 const createTray = require('./src/mainProcess/appTray')
+const Store = require('electron-store')
+
+const store = new Store({name:'settings'})
 
 app.on('ready', () => {
     // require('devtron').install()
@@ -27,6 +30,7 @@ app.on('ready', () => {
         skipTaskbar:true,
         hasShadow: false,
         webSecurity:false,
+        show:false
     }
     // const mainPath = "http://localhost:8080"
     const mainPath = path.join(__dirname,'./dist/index.html')
@@ -51,7 +55,7 @@ app.on('ready', () => {
     ipcMain.on('open-settings-window', () => {
         const settingsWindowConfig = {
             width: 450,
-            height: 280,
+            height: 300,
             icon:nativeImage.createFromPath('./src/assets/settings.png'),
             title:'应用设置',
             resizable:false,
@@ -59,6 +63,12 @@ app.on('ready', () => {
         const settingsURL = `file://${path.join(__dirname, './src/mainProcess/settingsWindow.html')}`
         const settingsWindow = new AppWindow(settingsWindowConfig, settingsURL)
         settingsWindow.setMenu(null)
+        //-----------
+        //重启使设置生效
+        settingsWindow.on('close',()=>{
+            app.relaunch()
+        })
+    })
     
     //-------------
     //设置开机是否自启动
@@ -72,12 +82,14 @@ app.on('ready', () => {
                 '--processStart', `"${exeName}"`,
                 ]
             })
-        })
-    })
+        }
+    )
+
 
     //--------------
     //全局快捷键
-    globalShortcut.register('F1',()=>{
+    let quickKey = store.get('quickKey') || 'F1'
+    globalShortcut.register(quickKey,()=>{
         ipcMain.emit('capture')
     })
 

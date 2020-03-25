@@ -1,5 +1,5 @@
 {
-  "author": "ysj",
+  "author": "ysj<https://github.com/YangShuangjie>",
   "name": "orchid",
   "version": "0.1.0",
   "private": true,
@@ -36,5 +36,68 @@
     "vue": "^2.6.11",
     "vue-template-compiler": "^2.6.11",
     "wait-on": "^4.0.1"
+  },
+  "build": {
+    "productName":"orchid",
+    "appId": "orchid",  
+    "copyright":"Copyright@2020 ${author}",
+    "compression": "store",
+    "directories": {
+      "output": "build",
+      "buildResources": "assets"
+    }, 
+    "asar": false,
+    "files": [
+      "dist/**/*"
+    ],
+    "win": {  
+      "icon": "./src/assets/orchid.ico",
+      "target":[
+        {
+          "target":["msi","nsis"], 
+          "arch": "x64"
+        }
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "mac":{
+      "icon":"./src/assets/orchid.icns",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "linux":{
+      "icon":"./src/assets/orchid.png"
+    },
+    "nsis": { 
+      "oneClick": false, 
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": false
+    },
+    "dmg":{
+      "contents":[
+          {
+
+            "x":380,
+            "y":280,
+            "type":"link",
+            "path":"/Applications"
+          },
+          {
+            "x":110,
+            "y":280,
+            "type":"file"
+          }
+      ],
+      "window":{
+        "width":400,
+        "height":400
+      }
+    },
+
+    "publish":[
+     "github"
+    ]
   }
 }

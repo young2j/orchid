@@ -22,7 +22,7 @@
       width: 350px;
   }
   .settings-row > div:nth-child(1){
-      flex:0.3
+      flex:0.25
   }
   .settings-row > div:nth-child(2){
       flex:0.7;
@@ -100,7 +100,7 @@
     border-radius: 15px;
     margin: 10px auto;
     position: absolute;
-    left: 35%;
+    left: 32%;
     top:95px;
     z-index: 10;
     visibility: hidden;
@@ -133,11 +133,12 @@
           </div>
       </div>
 
-      <div class='settings-row'>
-        <div style="flex:0.33;">快截按键 :</div>
+      <div class='settings-row' style="position: relative;">
+        <div style="flex:0.26;">快截按键 :</div>
         <div class='btn btn-dark btn-sm' type='button' id='quickKey'>
             F1
         </div>
+        <p style='font-size: 10px;position: absolute;right: -40px;top: 16px;'>(重启生效)</p>
       </div>
 
       <div class='settings-row'>
@@ -247,7 +248,7 @@
         }
 
         //------------------
-        let quickKey = store.get('quickey') || 'F1'
+        let quickKey = store.get('quickKey') || 'F1'
         $('quickKey').innerText = quickKey
         $('quickKey').onclick = e =>{
             $('custom-key').style.visibility = 'visible'

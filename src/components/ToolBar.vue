@@ -62,10 +62,10 @@
             <p class='line-width'>{{config.lineWidth+'px'}}</p>
           </li>
           <li><hr/></li>
-          <li @click='changeLineShape' data-shape='radius'><div class='radius-line'></div></li>
-          <li @click='changeLineShape' data-shape='radius50'><div class='radius50-line'></div></li>
-          <li @click='changeLineShape' data-shape='solid'><div class='solid-line'></div></li>
-          <li @click='changeLineShape' data-shape='dashed'><div class='dash-line'></div></li>
+          <li @click='changeLineShape' data-shape='radius'><div class='radius-line' :style="{borderColor:'#000'}"></div></li>
+          <li @click='changeLineShape' data-shape='radius50'><div class='radius50-line' :style="{borderColor:'#000'}"></div></li>
+          <li @click='changeLineShape' data-shape='solid'><div class='solid-line' :style="{borderColor:'#000'}"></div></li>
+          <li @click='changeLineShape' data-shape='dashed'><div class='dash-line' :style="{borderColor:'#000'}"></div></li>
        </ul>
         <b-form-input
           class="range-input"

@@ -2,7 +2,7 @@ const {nativeImage,Tray,ipcMain,Menu} = require('electron')
 
 let tray = null//提升为全局变量，否则可能出现托盘异常退出，被当作垃圾回收
 const createTray = ()=>{
-  tray = new Tray('./src/assets/樱花.ico') //注意：路径是相对与main.js而言的，只是从main.js分离出来而已
+  tray = new Tray('./src/assets/orchid.ico') //注意：路径是相对与main.js而言的，只是从main.js分离出来而已
   let settingsIcon = nativeImage.createFromPath('./src/assets/settings.png')
   let recogIcon = nativeImage.createFromPath('./src/assets/camera.png')
   let exitIcon = nativeImage.createFromPath('./src/assets/exit.png')

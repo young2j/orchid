@@ -7,11 +7,11 @@
           <span style="padding-left:20px">y :</span>{{top}}
         </li>
         <li >
-          <span :style="{textDecoration:switchColor? 'none':'underline #fff'}">hex :</span>
+          <span :style="{textDecoration:switchColor? 'none':'underline rgba(241,90,39,255)'}">hex :</span>
           <span :style='{color:hex}'>{{hex}}</span>
         </li>
         <li>
-          <span :style="{textDecoration:switchColor? 'underline #fff':'none'}">rgba:</span>
+          <span :style="{textDecoration:switchColor? 'underline rgba(241,90,39,255)':'none'}">rgba:</span>
           <span :style="{color:'rgba'+ rgba}">{{rgba}}</span>
         </li>
         <li>
@@ -34,7 +34,8 @@ export default {
       hex:'#000000',
       rgba:'(0,0,0,0)',
       switchColor:false,
-      hasCopy:false
+      hasCopy:false,
+      themeDark:this.$root.$data.theme==='dark'
     }
   },
   computed:{
@@ -47,9 +48,13 @@ export default {
         left = this.left + 30 + 'px'
         top = this.top-50 +'px'
       }
+      let background = this.themeDark? "#6c757d":"#fff"
+      let color = this.themeDark? "#fff":'#6c757d'
       return {
         position:'absolute',
         border: `2px ${this.hex} dashed`,
+        background,
+        color,
         left,
         top
       }
@@ -121,7 +126,7 @@ export default {
         padding-top: 5px;
         span:nth-child(2){
           font-weight: bold;
-          color:greenyellow;
+          color: rgba(241,90,39,255);
           padding-left:10px
         }
       }

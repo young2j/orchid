@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- dev -->
+  <!-- <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css"> -->
+  <!-- pack -->
+  <link rel="stylesheet" href="./assets/css/bootstrap.min.css">
+  <title>应用设置</title>
+</head>
+<!--  -->
+<style>
+  body{
+    background: #6c757d;
+    color:#fff;
+  }
+  #settings{
+      margin: 20px auto;
+  }
+
+  .settings-row{
+      display: flex;
+      margin: 10px auto;
+      width: 350px;
+  }
+  .settings-row > div:nth-child(1){
+      flex:0.25
+  }
+  .settings-row > div:nth-child(2){
+      flex:0.7;
+      margin-left: 20px;
+  }
+/* 颜色选择 */
+  .color-and-start{
+      display: flex;
+  }
+  .color-and-start > #captureColor-switch{
+    flex:0.9;
+  }
+  #captureColor-switch>input{
+    width: 120px;
+  }
+  .color-and-start #autoStart-switch{
+    flex:0.1;
+    padding-left: 10px;
+    padding-top: 3px;
+  }
+  #autoStart-switch>input{
+    width: 15px;
+    height: 15px;
+  }
+
+/* 开关 */
+  .switch{
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 110px;
+    cursor: pointer;
+  }
+  .switch>.open-div{
+    width:115px;
+    height: 15px;
+    border-radius: 10px;
+    background-color: rgb(57, 214, 57);
+  }
+  .switch>.close-div{
+    width:115px;
+    height: 15px;
+    border-radius: 10px;
+    background-color: #fff;
+    border: 1px #000 solid;
+  }
+  .switch>.open-cursor-div{
+    position: absolute;
+    left:105px;
+    width: 15px;
+    height: 20px;
+    background: #fff;
+    border: 1px #000 solid;
+  }
+  .switch>.close-cursor-div{
+    position: absolute;
+    left:0px;
+    width: 15px;
+    height: 20px;
+    background: #fff;
+    border: 1px #000 solid;
+  }
+  .switch>.switch-text{
+      padding-left: 50px;
+  }
+
+/* custom-key */
+ #custom-key{
+    text-align: center;
+    width: 250px;
+    height: 30px;
+    background: #fff;
+    box-shadow: 0 0 4px 4px #333c40;
+    border:2px #fff solid;
+    border-radius: 15px;
+    margin: 10px auto;
+    position: absolute;
+    left: 32%;
+    top:95px;
+    z-index: 10;
+    visibility: hidden;
+}
+</style>
+
+<!--  -->
+<body>
+  <div id='settings'>
+
+      <div class='settings-row'>
+          <div>保存路径 :</div>
+          <div class="input-group input-group-sm">
+              <input type="text" class="form-control" id='path'>
+              <div class="input-group-append">
+                  <button class="btn btn-dark" type='button' id='browser-btn'>浏览</button>
+              </div>
+          </div>
+      </div>
+
+      <div class='settings-row'>
+          <div>设置主题 :</div>
+          <div class="btn-group btn-group-toggle btn-group-sm">
+            <label class="btn btn-secondary active">
+                <input type="radio" name="options" id="dark-theme" checked> Dark
+            </label>
+            <label class="btn btn-light">
+                <input type="radio" name="options" id="light-theme"> Light
+            </label>
+          </div>
+      </div>
+
+      <div class='settings-row' style="position: relative;">
+        <div style="flex:0.26;">快截按键 :</div>
+        <div class='btn btn-dark btn-sm' type='button' id='quickKey'>
+            F1
+        </div>
+        <p style='font-size: 10px;position: absolute;right: -40px;top: 16px;'>(重启生效)</p>
+      </div>
+
+      <div class='settings-row'>
+          <div>颜色提示 :</div>
+          <div class="switch" id='colorTip-switch'>
+              <div class="open-div"></div>
+              <!-- <div class="close-div"></div> -->
+              <div class="open-cursor-div"></div>
+              <div class='switch-text'>开</div>
+          </div>
+      </div>
+
+      <div class='settings-row'>
+          <div>消息提示 :</div>
+          <div class="switch" id='message-switch'>
+              <div class="open-div"></div>
+              <!-- <div class="close-div"></div> -->
+              <div class="open-cursor-div"></div>
+              <div class='switch-text'>开</div>
+          </div>
+      </div>
+      <div class='settings-row'>
+          <div>声音提示 :</div>
+          <div class="switch" id='sound-switch'>
+              <div class="open-div"></div>
+              <!-- <div class="close-div"></div> -->
+              <div class="open-cursor-div"></div>
+              <div class='switch-text'>开</div>
+          </div>
+      </div>
+      <div class='settings-row'>
+        <div>边框颜色 :</div>
+        <div class='color-and-start'>
+            <div id='captureColor-switch'>
+                <input type="color" id='colorInput' autocomplete/>
+            </div>
+            <div>开机自启 :</div>
+            <div id='autoStart-switch'>
+                <input type="checkbox" id='autoStartCheck'/>
+            </div>
+        </div>
+      </div>
+  </div>
+    <input id='custom-key' autofocus/>
+</body>
+<!--  -->
+
+<script>
+    const {app,dialog } = require('electron').remote
+    const {ipcRenderer} = require('electron')
+    const Store = require('electron-store')
+    const store = new Store({name:'settings'})
+    const fs = require('fs')
+    const path = require('path')
+
+    const  $ = (id)=> document.getElementById(id)
+    
+    let accelerator
+    fs.readFile(
+        path.join(__dirname,'./accelerator.json'),'utf8',
+        (err,data)=> accelerator=JSON.parse(data)
+        )
+//------------
+    document.addEventListener('DOMContentLoaded',()=>{
+        let path = store.get('savePath') || app.getPath('pictures')
+        $('path').value = path
+        $('browser-btn').onclick = e =>{
+            dialog.showOpenDialog({
+                title:'选择保存路径',
+                defaultPath:path,
+                properties:['openDirectory']
+            }).then( res=>{                
+                $('path').value = res.filePaths[0]
+                store.set('savePath',res.filePaths[0])
+              }
+            )
+        }
+         
+        //--------------------
+        let theme = store.get('theme')
+        if(theme==='dark'){
+            $('dark-theme').parentNode.className = 'btn btn-secondary active'
+            $('light-theme').parentNode.className = 'btn btn-light'
+            document.body.style.cssText = 'background:#6c757d;color:#fff'
+        }
+
+        if(theme==='light'){
+            $('light-theme').parentNode.className = 'btn btn-light active'
+            $('dark-theme').parentNode.className = 'btn btn-secondary'
+            document.body.style.cssText = 'background:#fff;color:#6c757d'
+            store.set('theme','light')
+        }
+
+        $('dark-theme').onclick = e =>{
+            e.target.parentNode.className = 'btn btn-secondary active'
+            $('light-theme').parentNode.className = 'btn btn-light'
+            document.body.style.cssText = 'background:#6c757d;color:#fff'
+            store.set('theme','dark')
+        }
+
+
+        $('light-theme').onclick = e =>{
+            e.target.parentNode.className = 'btn btn-light active'
+            $('dark-theme').parentNode.className = 'btn btn-secondary'
+            document.body.style.cssText = 'background:#fff;color:#6c757d'
+            store.set('theme','light')
+        }
+
+        //------------------
+        let quickKey = store.get('quickKey') || 'F1'
+        $('quickKey').innerText = quickKey
+        $('quickKey').onclick = e =>{
+            $('custom-key').style.visibility = 'visible'
+            $('custom-key').focus()
+
+            let completeSetKey = e =>{
+                $('custom-key').style.visibility = 'hidden'
+                if(e.target.value){
+                    $('quickKey').innerText = e.target.value
+                    store.set('quickKey',e.target.value)
+                }
+            }
+            $('custom-key').onblur = completeSetKey
+
+        
+            $('custom-key').onkeydown = e=>{
+                e.preventDefault()
+                if(e.keyCode===13 || e.keyCode===27){ //enter esc
+                    completeSetKey()
+                }
+                if(e.keyCode===9){ //TAB
+                    e.preventDefault()
+                }
+                
+                let match = e.target.value.match(/\+/g)
+                if(!e.target.value){
+                    e.target.value = accelerator[e.keyCode.toString()]
+                }else if(!match || match.length<2){
+                    e.target.value += '+' + accelerator[e.keyCode.toString()]
+                }else{
+                    e.target.value = null
+                }
+                return
+            }
+    
+        }
+        //------------------
+        let showColorTip = store.get('showColorTip')
+        $('colorTip-switch').innerHTML = showColorTip? `
+            <div class="open-div"></div>
+            <div class="open-cursor-div"></div>
+            <div class='switch-text'>开</div>
+            `:`
+            <div class="close-div"></div>
+            <div class="close-cursor-div"></div>
+            <div class='switch-text'>关</div>
+            `
+        $('colorTip-switch').onclick = e =>{ //反向
+            $('colorTip-switch').innerHTML = !showColorTip? ` 
+                <div class="open-div"></div>
+                <div class="open-cursor-div"></div>
+                <div class='switch-text'>开</div>
+                `:`
+                <div class="close-div"></div>
+                <div class="close-cursor-div"></div>
+                <div class='switch-text'>关</div>
+                `
+                showColorTip = !showColorTip
+                store.set('showColorTip',showColorTip)
+        }
+        //----------------
+        let showMessage = store.get('showMessage')
+        $('message-switch').innerHTML = showMessage? `
+                <div class="open-div"></div>
+                <div class="open-cursor-div"></div>
+                <div class='switch-text'>开</div>
+                `:`
+                <div class="close-div"></div>
+                <div class="close-cursor-div"></div>
+                <div class='switch-text'>关</div>
+                `        
+        $('message-switch').onclick = e =>{
+            $('message-switch').innerHTML = !showMessage? `
+                <div class="open-div"></div>
+                <div class="open-cursor-div"></div>
+                <div class='switch-text'>开</div>
+                `:`
+                <div class="close-div"></div>
+                <div class="close-cursor-div"></div>
+                <div class='switch-text'>关</div>
+                `
+                showMessage = !showMessage
+                store.set('showMessage',showMessage)
+        }
+        //----------------
+        let playSound = store.get('playSound')
+        $('sound-switch').innerHTML = playSound? `
+                <div class="open-div"></div>
+                <div class="open-cursor-div"></div>
+                <div class='switch-text'>开</div>
+                `:`
+                <div class="close-div"></div>
+                <div class="close-cursor-div"></div>
+                <div class='switch-text'>关</div>
+                `
+        $('sound-switch').onclick = e =>{
+            $('sound-switch').innerHTML = !playSound? `
+                <div class="open-div"></div>
+                <div class="open-cursor-div"></div>
+                <div class='switch-text'>开</div>
+                `:`
+                <div class="close-div"></div>
+                <div class="close-cursor-div"></div>
+                <div class='switch-text'>关</div>
+                `
+                playSound = !playSound
+                store.set('playSound',playSound)
+        }
+
+        //-------------
+        let captureColor = store.get('captureColor') || '#ffffff'
+        $('colorInput').onchange = e => {
+            store.set('captureColor',e.target.value)
+        }
+        //---------
+        $('autoStartCheck').checked = app.getLoginItemSettings().openAtLogin
+        $('autoStartCheck').onchange = e =>{
+            ipcRenderer.send('set-autostart',{autostart:e.target.value==='on'})
+        }
+    })
+</script>
+</html>

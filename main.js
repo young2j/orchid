@@ -2,7 +2,7 @@ const { app, screen,ipcMain,nativeImage,globalShortcut,BrowserWindow } = require
 const path = require('path')
 
 // const AppWindow = require('./src/mainProcess/appWindow')
-const createTray = require('./src/mainProcess/appTray')
+const createTray = require('./mainProcess/appTray')
 const Store = require('electron-store')
 
 const store = new Store({name:'settings'})
@@ -32,7 +32,7 @@ const createMainWindow = (width,height)=>{
             nodeIntegration:true
           },
         show:false,
-        paintWhenInitiallyHidden:false
+        paintWhenInitiallyHidden:false //启动时屏蔽ready-to-show事件
     }
     // const mainPath = "http://localhost:8080"
     const mainPath = `file://${path.join(__dirname,'./dist/index.html')}`
@@ -86,9 +86,10 @@ const createSettingsWindow = ()=>{
             resizable:false,
             webPreferences:{
                 nodeIntegration:true
-              }
+              },
+            show:false
         }
-        const settingsURL = `file://${path.join(__dirname, './src/mainProcess/settingsWindow.html')}`
+        const settingsURL = `file://${path.join(__dirname, './mainProcess/settingsWindow.html')}`
         let settingsWindow = new BrowserWindow(settingsWindowConfig)
         settingsWindow.loadURL(settingsURL)
         settingsWindow.setMenu(null)
@@ -132,19 +133,16 @@ app.on('ready', () => {
 })
 
 
-app.on('will-quit', () => {
-    // 注销快捷键
-    // globalShortcut.unregister('CommandOrControl+X')
-  
+app.on('will-quit', () => {  
     // 注销所有快捷键
     globalShortcut.unregisterAll()
 })
 
 
 // Quit when all windows are closed.
-// app.on('window-all-closed', function () {
-//     if (process.platform !== 'darwin') app.quit()
-// })
+app.on('window-all-closed', ()=> {
+    if (process.platform !== 'darwin') app.quit()
+})
 
 
 app.allowRendererProcessReuse = true //去除warning

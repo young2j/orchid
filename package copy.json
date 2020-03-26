@@ -10,8 +10,7 @@
     "lint": "vue-cli-service lint",
     "dev": "concurrently \"npm run serve\" \"wait-on http://localhost:8080 && electron .\"",
     "start": "concurrently \"npm run build && electron .\"",
-    "builder:w": "electron-builder -w --x64",
-    "builder:l": "electron-builder -l --x64"
+    "builder": "electron-builder -wl"
   },
   "dependencies": {
     "core-js": "^3.6.4",
@@ -51,7 +50,7 @@
     "extraResources":  {
       "from": "./node_modules/bootstrap/dist/css/bootstrap.min.css",
       "to": "./app/mainProcess/assets/css/bootstrap.min.css"
-    },
+    },    
     "asar": false,
     "files": [
       "dist/**/*",
@@ -60,53 +59,14 @@
     ],
     "win": {
       "icon": "./src/assets/orchid256x256.ico",
-      "target": "nsis",
-      "artifactName": "${productName}-${version}-${platform}-${arch}.${ext}"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowElevation": true,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
-    },
-    "msi": {
-      "artifactName":"${productName}-${version}-${platform}-${arch}.${ext}", 
-      "createDesktopShortcut":true, 
-      "createStartMenuShortcut":true, 
-      "oneClick":false, 
-      "perMachine":false, 
-      "publish":"github", 
-      "runAfterFinish":false
-    },
-    "linux": {
-      "icon": "./src/assets/orchid256x256.png",
-      "target": "deb"
-    },
-    "mac": {
-      "icon": "./src/assets/orchid.icns",
-      "artifactName": "${productName}-${version}-${platform}-${arch}.${ext}"
-    },
-    "dmg": {
-      "contents": [
-        {
-          "x": 380,
-          "y": 280,
-          "type": "link",
-          "path": "/Applications"
-        },
-        {
-          "x": 110,
-          "y": 280,
-          "type": "file"
-        }
+      "target": [
+        "msi",
+        "nsis",
+        "portable"
       ],
-      "window": {
-        "width": 400,
-        "height": 400
-      }
+      "artifactName": "${productName}-${version}-${platform}-${arch}.${ext}"
     },
+
     "publish": [
       "github"
     ]

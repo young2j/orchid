@@ -3,7 +3,7 @@
     <!-- //点击工具按钮后，选区不可再移动 -->
     <b-button-group @click="$emit('closeDrag')">
 
-      <b-tooltip triggers='focus' target='orchid-button' title="拖动"></b-tooltip>
+      <!-- <b-tooltip triggers='focus' target='orchid-button' title="拖动"></b-tooltip> -->
       <b-button :variant="themeDark? 'secondary':'light'" id='orchid-button'>
         <span>🌸</span>
       </b-button>
@@ -62,10 +62,10 @@
             <p class='line-width'>{{config.lineWidth+'px'}}</p>
           </li>
           <li><hr/></li>
-          <li @click='changeLineShape' data-shape='radius'><div class='radius-line' :style="{borderColor:'#000'}"></div></li>
-          <li @click='changeLineShape' data-shape='radius50'><div class='radius50-line' :style="{borderColor:'#000'}"></div></li>
-          <li @click='changeLineShape' data-shape='solid'><div class='solid-line' :style="{borderColor:'#000'}"></div></li>
-          <li @click='changeLineShape' data-shape='dashed'><div class='dash-line' :style="{borderColor:'#000'}"></div></li>
+          <li @click='changeLineShape' data-shape='radius'><div class='radius-line' :style="{borderColor:themeDark? '#000':'#fff'}"></div></li>
+          <li @click='changeLineShape' data-shape='radius50'><div class='radius50-line' :style="{borderColor:themeDark? '#000':'#fff'}"></div></li>
+          <li @click='changeLineShape' data-shape='solid'><div class='solid-line' :style="{borderColor:themeDark? '#000':'#fff'}"></div></li>
+          <li @click='changeLineShape' data-shape='dashed'><div class='dash-line' :style="{borderColor:themeDark? '#000':'#fff'}"></div></li>
        </ul>
         <b-form-input
           class="range-input"
@@ -83,7 +83,7 @@
         <span @click="clickColor"><b-icon icon="pen"></b-icon></span>
         <ColorPicker id='colorpicker'
           v-show="showColorPicker"
-          :style="{top:toolbarBottom>380? 40+'px':-378+'px',background:themeDark? '#6c757d':'#fff'}"
+          :style="{top:toolbarBottom>380? 40+'px':-345+'px',background:themeDark? '#6c757d':'#fff'}"
           :color="config.lineColor"
           @changeColor="changeColor"
         />

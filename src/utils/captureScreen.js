@@ -25,7 +25,7 @@ const { id,size } = remote.screen.getPrimaryDisplay() //workAreaSize >= size,前
 
 
 export const captureScreen = () => {
-//  if(process.platform==='win32'){
+  if(process.platform==='win32'){ //老坑：desktopCapture=>linux下无效
     desktopCapturer.getSources(
       { types: ['screen'],thumbnailSize:{width:0,height:0}}
     ).then(async sources => {
@@ -51,21 +51,21 @@ export const captureScreen = () => {
       }
     })
 
-//   } else {
-//     navigator.mediaDevices.getUserMedia({
-//       audio: false,
-//       video: {
-//         mandatory: {
-//           chromeMediaSource: 'desktop',
-//           // chromeMediaSourceId: source.id, //出现NotReadableError,是因为getPrimaryDisplay()返回的id不一致，不做多屏幕直接去掉就可以了
-//           minWidth: size.width,
-//           maxWidth: size.width,
-//           minHeight: size.height,
-//           maxHeight: size.height,
-//         },
-//       }
-//     }).then( stream => handleStream(stream))
-//   }
+   } else { //linux
+     navigator.mediaDevices.getUserMedia({
+       audio: false,
+       video: {
+         mandatory: {
+           chromeMediaSource: 'desktop',
+           // chromeMediaSourceId: source.id, //出现NotReadableError,是因为getPrimaryDisplay()返回的id不一致，不做多屏幕直接去掉就可以了
+           minWidth: size.width,
+           maxWidth: size.width,
+           minHeight: size.height,
+           maxHeight: size.height,
+         },
+       }
+     }).then( stream => handleStream(stream))
+   }
 }
 
 
@@ -89,9 +89,8 @@ const handleStream = (stream) => {
       // ctx.imageSmoothingEnabled = false;
       ctx.drawImage(bmp, 0, 0) //startX,startY,width,height  in canvas
       stream.getTracks()[0].stop() //关闭视频流，序号是反向的，此处只有一个所以是0
-
       // 移除video元素
-      // document.getElementById('app').removeChild(video)
+//      document.getElementById('layout').removeChild(video)
     })
   }
 }

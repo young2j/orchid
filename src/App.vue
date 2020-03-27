@@ -57,8 +57,8 @@
 <!-- 颜色、位置提示框 -->
     <ColorTip v-show="!isCapture" v-if="showColorTip"/>
 <!-- 桌面捕获 -->
+    <canvas id="desktop-canvas" ref='desktop' :style="{visibility: win32? 'hidden':'visible'}"></canvas>
     <video id="video"></video>
-    <canvas id="desktop-canvas" ref='desktop'></canvas>
   </div>
 </template>
 
@@ -83,7 +83,7 @@ export default {
       y: 0,
       width: 0,
       height: 0,
-      // pixelRatio:window.devicePixelRatio,
+      win32:process.platform==='win32',
 
       isCapture: false,
       completeSelectRegion: false,

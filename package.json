@@ -57,7 +57,8 @@
     "files": [
       "dist/**/*",
       "./main.js",
-      "./mainProcess"
+      "./mainProcess",
+      "!./mainProcess/appWindow.js"
     ],
     "win": {
       "icon": "./src/assets/orchid256x256.ico",

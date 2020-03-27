@@ -1,7 +1,6 @@
 const { app, screen,ipcMain,nativeImage,globalShortcut,BrowserWindow } = require('electron')
 const path = require('path')
 
-// const AppWindow = require('./src/mainProcess/appWindow')
 const createTray = require('./mainProcess/appTray')
 const Store = require('electron-store')
 
@@ -19,11 +18,12 @@ const createMainWindow = (width,height)=>{
         height,
         resizable: false,
         movable: false,
+        center:true,
         frame:false,
         transparent: true,//On Windows, does not work unless the window is frameless.
-        // backgroundColor:"#000000",
+                          //在linux,必须在命令行中设置 --enable-transparent-visuals --disable-gpu来禁用GPU, 启用ARGB。
         // opacity: 0.3, //windows or mac
-        fullscreen: true,
+        fullscreen: process.platform==='win32', //linux下一定要设置为false，否则和show冲突，一打开就会进入全屏
         alwaysOnTop:process.platform==='win32', //linux 为true时，保存图片窗口会被掩盖，点不了
         skipTaskbar:true,
         hasShadow: false,
@@ -31,8 +31,8 @@ const createMainWindow = (width,height)=>{
         webPreferences:{
             nodeIntegration:true
           },
-        show:process.platform!=='win32', //windows:false;linux:true--否则一打开就是黑屏，且不为show状态就无法注册esc，无法按esc退出
-        paintWhenInitiallyHidden:false //启动时屏蔽ready-to-show事件
+        show:false,
+        paintWhenInitiallyHidden:false, //启动时屏蔽ready-to-show事件
     }
     // const mainPath = "http://localhost:8080"
     const mainPath = `file://${path.join(__dirname,'./dist/index.html')}`
@@ -104,7 +104,7 @@ const createSettingsWindow = ()=>{
 
 
 app.on('ready', () => {
-    const { width, height } = screen.getPrimaryDisplay().workAreaSize
+    const { width, height } = screen.getPrimaryDisplay().size
     //------------------------------
     // 托盘图标和右键菜单
     createTray()

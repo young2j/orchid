@@ -245,7 +245,7 @@ export default {
       if(currentData){
         this.recordsQueue.unshift(currentData)
         let preData = this.recordsQueue[this.recordsQueue.length-1]
-        if(preData){ //!=0
+        if(preData){ //!==0
           this.displayCtx.putImageData(preData,0,0) //恢复前一次状态
         } else { //===0
           this.clipDesktop()
@@ -599,7 +599,7 @@ export default {
       //改变为适合的cursor
       this.assistRef.style.cursor = 'move'
       //清空画布
-      this.recordsQueue = []
+      this.recordsQueue = [0]
       this.displayCtx.clearRect(0,0,this.canvasWidth,this.canvasHeight)
       //清空文本框
       const textInputs = document.getElementsByClassName('textInput')
@@ -640,7 +640,7 @@ export default {
       let x = parseInt(e.target.style.left)-this.canvasX + 5  // padding 5px
       let y = parseInt(e.target.style.top)-this.canvasY + 5  //
       let divWidth = parseInt(e.target.style.width)
-      let text = e.target.innerHTML  //like: 'afaf<div><br></div><div>gagdfgsdfg</div><div>hdfhh</div>'
+      let text = e.target.innerHTML+`<div><br></div>`  //like: 'afaf<div><br></div><div>gagdfgsdfg</div><div>hdfhh</div>'
 
       let rows = []
       text.split('<div>').forEach(row => (

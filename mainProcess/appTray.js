@@ -39,7 +39,7 @@ const createTray = ()=>{
   tray.setToolTip('Orchid')
   tray.setContextMenu(contextMenu)
 
-  if(process.platform==='win32'){
+  if(process.platform==='win32'){//linux单击出现的是右键菜单
     tray.on('click',()=>{
       ipcMain.emit('capture')
     })

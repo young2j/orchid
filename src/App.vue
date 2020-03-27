@@ -195,7 +195,6 @@ export default {
         this.clipDesktop()
       }
     },
-
     onDrag(e) {
       if (this.completeSelectRegion && this.canDrag) {
         // 鼠标点击物体那一刻相对于物体左侧边框的距离=点击时的位置相对于浏览器
@@ -249,7 +248,7 @@ export default {
       //bind + update
       let { x, y, width, height } = binding.value;
       const { clientWidth, clientHeight } = document.body;
-      const toolbarLength = 575;
+      const toolbarLength = 555;
       const toolbarHeight = 40;
       const isBeyondLeft = (toolbarLength - width) / 2 > x; //左边碰壁了
       const isBeyondRight =

@@ -3,7 +3,7 @@
     <!-- //点击工具按钮后，选区不可再移动 -->
     <b-button-group @click="$emit('closeDrag')">
 
-      <!-- <b-tooltip triggers='focus' target='orchid-button' title="拖动"></b-tooltip> -->
+      <b-tooltip triggers='focus' target='orchid-button' title="orchid"></b-tooltip>
       <b-button :variant="themeDark? 'secondary':'light'" id='orchid-button'>
         <span>🌸</span>
       </b-button>
@@ -89,10 +89,10 @@
         />
       </b-button>
 
-      <b-tooltip triggers='focus' target='recognition-button' title='识别'></b-tooltip>
+      <!-- <b-tooltip triggers='focus' target='recognition-button' title='识别'></b-tooltip>
       <b-button :variant="themeDark? 'secondary':'light'" id='recognition-button' @click="clickRecognition">
         <span><b-icon icon="camera"></b-icon></span>
-      </b-button>
+      </b-button> -->
 
       <b-tooltip triggers='focus' target='save-button' title="另存"></b-tooltip>
       <b-button :variant="themeDark? 'secondary':'light'" id='save-button' @click="clickSave">
@@ -551,9 +551,9 @@ export default {
       this.showLineShape = false
       this.showColorPicker = !this.showColorPicker
     },
-    clickRecognition(){
-      this.colseDropDown()
-    },
+    // clickRecognition(){
+    //   this.colseDropDown()
+    // },
     clickSave(){
       remote.dialog.showSaveDialog(
         {
@@ -596,8 +596,9 @@ export default {
       this.colseDropDown()
       //初始化选择区域状态
       this.$emit('initSelect')
-      //改变为适合的cursor
+      //改变为适合的cursor,并清理mousedown事件
       this.assistRef.style.cursor = 'move'
+      this.assistRef.onmousedown = null //一定要清理掉，否则再次截图会无法拖拽，直接触发上次的mousedown事件
       //清空画布
       this.recordsQueue = [0]
       this.displayCtx.clearRect(0,0,this.canvasWidth,this.canvasHeight)
@@ -700,7 +701,7 @@ export default {
   z-index: 999;
   .btn-group {
     button {
-      padding: 5px 7.5px 7px 7.5px;
+      padding: 5px 9px 7px 9px;
       margin:0px;
       span {
         display: inline-block;

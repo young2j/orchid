@@ -12,7 +12,7 @@ const createTray = ()=>{
   : path.join(__dirname,'./assets/images/orchid.png')
   tray = new Tray(ico) //注意：打包时路径就是自己的绝对路径。
   let settingsIcon = nativeImage.createFromPath(path.join(__dirname,'./assets/images/settings.png'))
-  let recogIcon = nativeImage.createFromPath(path.join(__dirname,'./assets/images/camera.png'))
+  // let recogIcon = nativeImage.createFromPath(path.join(__dirname,'./assets/images/camera.png'))
   let exitIcon = nativeImage.createFromPath(path.join(__dirname,'./assets/images/exit.png'))
   const menuTemplate = [
       {
@@ -23,16 +23,16 @@ const createTray = ()=>{
             ipcMain.emit('open-settings-window')
         }
       },
-      {
-        label: '文字识别',
-        type: 'normal',
-        icon:recogIcon,
-        click:()=>{
-          ipcMain.emit('open-recognition-window')
-        }
-    },
-      {type: 'separator'},
-      {label:"退出应用",role:"quit",icon:exitIcon},
+      // {
+      //   label: '文字识别',
+      //   type: 'normal',
+      //   icon:recogIcon,
+      //   click:()=>{
+      //     ipcMain.emit('open-recognition-window')
+      //   }
+      // },
+        {type: 'separator'},
+        {label:"退出应用",role:"quit",icon:exitIcon},
     ]
 
   const contextMenu = Menu.buildFromTemplate(menuTemplate)

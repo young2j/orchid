@@ -2,9 +2,9 @@
 
 **This is a cross-platform screenshot tool based on vue and electron.**
 
-<img src='./images/darktheme.png' width='300' height='150'>
-<img src='./images/lighttheme.png' width='300' height='150'>
-<img src='./images/settings.png' width='300' height='150'>
+<img src='./images/darktheme.png' width='400' height='200'>
+<img src='./images/lighttheme.png' width='400' height='200'>
+<img src='./images/settings.png' width='400' height='200'>
 
 
 

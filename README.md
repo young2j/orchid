@@ -2,11 +2,11 @@
 
 **This is a cross-platform screenshot tool based on vue and electron.**
 
-![darktheme]('./images/darktheme.png')
+![darktheme](./images/darktheme.png)
 
-![lightheme]('./images/lighttheme.png')
+![lightheme](./images/lighttheme.png)
 
-![settings]('./images/settings.png')
+![settings](./images/settings.png)
 
 
 # features
